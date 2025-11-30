@@ -12,4 +12,6 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
+
+// Use Realtime Database
 export const db = getDatabase(app);
