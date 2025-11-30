@@ -1,28 +1,30 @@
-/* MAIN CONTAINER */
-.welcome-container {
-  width: 100%;
-  height: 100vh;
-  background: linear-gradient(
-    to bottom,
-    #1e90ff 0%,
-    #4fa7ff 45%,
-    #ffffff 88%
-  );
-  padding: 20px;
-  padding-top: 25px;
+/* GENERAL RESET */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
   font-family: "Inter", sans-serif;
-  color: #ffffff;
-  overflow: hidden;
 }
 
-/* TOP BAR — EXACT LIKE SCREENSHOT */
+/* FULL SCREEN BLUE GRADIENT BG */
+.welcome-container {
+  height: 100vh;
+  width: 100%;
+  background: linear-gradient(#1a73e8, #6bb7ff);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* TOP BAR */
 .top-bar {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  margin-top: 5px;
+  align-items: center;
+  color: white;
 }
 
+/* LEFT SIDE PROFILE */
 .profile {
   display: flex;
   align-items: center;
@@ -30,83 +32,78 @@
 }
 
 .avatar {
-  width: 36px;
-  height: 36px;
+  width: 45px;
+  height: 45px;
   border-radius: 50%;
 }
 
 .profile-text h4 {
-  margin: 0;
-  font-size: 15px;
+  font-size: 17px;
   font-weight: 600;
 }
 
 .profile-text span {
-  margin: 0;
-  padding: 0;
-  font-size: 12px;
+  font-size: 13px;
   opacity: 0.9;
 }
 
+/* RIGHT SIDE LANGUAGE + SPEAKER */
 .top-right {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 14px;
+  font-size: 15px;
 }
 
 .language {
-  font-size: 14px;
+  cursor: pointer;
 }
 
 .speaker {
-  font-size: 18px;
-  margin-top: 2px;
+  font-size: 20px;
+  cursor: pointer;
 }
 
-/* GREETING SECTION — EXACT POSITION */
+/* GREETING TEXT CENTERED */
 .greeting {
-  margin-top: 135px; /* EXACT spacing based on screenshot */
-  padding-left: 2px;
+  margin-top: 120px;
+  text-align: left;
+  width: 100%;
+  color: white;
 }
 
 .greeting h1 {
-  font-size: 30px;
+  font-size: 34px;
   font-weight: 700;
-  margin: 0;
-  display: flex;
-  align-items: center;
-  gap: 6px;
+  margin-bottom: 8px;
 }
 
 .greeting h2 {
   font-size: 26px;
-  font-weight: 700;
-  margin-top: 10px;
-  margin-bottom: 0;
+  opacity: 0.95;
 }
 
-/* CHAT BOX BUTTON — EXACT MATCH */
+/* CHAT BOX (WHITE INPUT LOOK) */
 .chat-box {
-  margin-top: 45px;
-  background: #ffffff;
-  color: #1e90ff;
-  padding: 20px 22px;
-  border-radius: 12px;
+  margin-top: 180px;
+  width: 100%;
+  background: white;
+  padding: 18px 20px;
+  border-radius: 10px;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  font-size: 17px;
   cursor: pointer;
-  font-size: 15px;
-  font-weight: 600;
-  width: 100%;
-  max-width: 100%;
-  box-shadow: 0px 3px 12px rgba(0, 0, 0, 0.12);
+  box-shadow: 0px 3px 12px rgba(0,0,0,0.12);
 }
 
-.chat-box:hover {
-  opacity: 0.96;
+.chat-text {
+  color: #1a73e8;
+  font-weight: 500;
 }
 
 .chat-arrow {
+  color: #1a73e8;
   font-size: 20px;
 }
