@@ -1,21 +1,26 @@
+/* FULL PAGE BLUE WITH BOTTOM GRADIENT */
 .welcome-container {
   width: 100%;
   height: 100vh;
-  background: linear-gradient(to bottom, #1e90ff 0%, #62b3ff 40%, #ffffff 85%);
-  padding: 25px;
+  background: linear-gradient(to bottom, #1e7be0 0%, #1e7be0 55%, #ffffff 100%);
+  color: white;
   font-family: "Inter", sans-serif;
-  color: #ffffff;
-  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 25px;
+  box-sizing: border-box;
 }
 
-/* TOP BAR */
+/* TOP BAR — CENTERED HORIZONTALLY */
 .top-bar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  margin-bottom: 60px;
+  justify-content: center;
+  gap: 20px;
 }
 
+/* LEFT SIDE PROFILE */
 .profile {
   display: flex;
   align-items: center;
@@ -23,26 +28,27 @@
 }
 
 .avatar {
-  width: 38px;
-  height: 38px;
+  width: 45px;
+  height: 45px;
   border-radius: 50%;
 }
 
 .profile-text h4 {
   margin: 0;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 600;
 }
 
 .profile-text span {
-  font-size: 11px;
-  opacity: 0.9;
+  font-size: 12px;
+  opacity: 0.95;
 }
 
+/* RIGHT SIDE: LANGUAGE + SPEAKER ICON */
 .top-right {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 15px;
 }
 
 .language {
@@ -53,46 +59,48 @@
   font-size: 18px;
 }
 
-/* GREETING SECTION */
+/* GREETING (CENTERED) */
 .greeting {
-  margin-top: 120px; /* pushes text down like screenshot */
-  padding-left: 5px;
+  margin-top: 120px;
+  text-align: center;
 }
 
 .greeting h1 {
-  font-size: 30px;
-  font-weight: 700;
-  margin-bottom: 8px;
-}
-
-.greeting h2 {
-  font-size: 26px;
+  font-size: 38px;
   font-weight: 700;
   margin: 0;
 }
 
-/* CHAT BOX BUTTON */
+.greeting h2 {
+  font-size: 28px;
+  font-weight: 700;
+  margin-top: 6px;
+}
+
+/* CHAT BUTTON EXACT LIKE FIRST SCREENSHOT */
+.chat-button-wrapper {
+  margin-top: 40px;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
 .chat-box {
-  margin-top: 45px;
-  background: #ffffff;
-  color: #1e90ff;
+  background: white;
+  color: #1e7be0;
   padding: 18px 20px;
-  border-radius: 12px;
+  border-radius: 14px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   cursor: pointer;
-  font-size: 15px;
+  font-size: 17px;
   font-weight: 600;
-  width: 95%;            /* FULL WIDTH like screenshot */
-  max-width: 1000px;     /* looks consistent on large screens */
-  box-shadow: 0px 3px 10px rgba(0,0,0,0.12);
-}
-
-.chat-box:hover {
-  opacity: 0.95;
+  width: 80%;
+  max-width: 420px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.15);
 }
 
 .chat-arrow {
-  font-size: 20px;
+  font-size: 22px;
 }
