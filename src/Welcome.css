@@ -1,4 +1,4 @@
-/* RESET */
+/* GENERAL RESET */
 * {
   margin: 0;
   padding: 0;
@@ -6,12 +6,12 @@
   font-family: "Inter", sans-serif;
 }
 
-/* FULL PAGE BLUE BG */
+/* FULL SCREEN BLUE GRADIENT BG */
 .welcome-container {
   height: 100vh;
   width: 100%;
-  background: #1a73e8;
-  padding: 25px 22px;
+  background: linear-gradient(#1a73e8, #6bb7ff);
+  padding: 20px;
   display: flex;
   flex-direction: column;
 }
@@ -19,14 +19,12 @@
 /* TOP BAR */
 .top-bar {
   display: flex;
-  justify-content: space-between;   /* FIX 1 — left/right layout */
+  justify-content: space-between;
   align-items: center;
-  width: 100%;
   color: white;
-  margin-bottom: 40px;              /* keeps it at top */
 }
 
-/* PROFILE LEFT */
+/* LEFT SIDE PROFILE */
 .profile {
   display: flex;
   align-items: center;
@@ -34,27 +32,27 @@
 }
 
 .avatar {
-  width: 42px;
-  height: 42px;
+  width: 42px;          /* updated to exact match */
+  height: 42px;         /* updated to exact match */
   border-radius: 50%;
 }
 
 .profile-text h4 {
-  font-size: 16px;
+  font-size: 16px;      /* updated */
   font-weight: 600;
-  margin-bottom: 2px;
+  margin-bottom: 2px;   /* updated */
 }
 
 .profile-text span {
-  font-size: 12.5px;
+  font-size: 12.5px;    /* updated */
   opacity: 0.9;
 }
 
-/* RIGHT SIDE */
+/* RIGHT SIDE LANGUAGE + SPEAKER */
 .top-right {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 12px;            /* updated */
   font-size: 15px;
 }
 
@@ -63,15 +61,16 @@
 }
 
 .speaker {
+  font-size: 19px;      /* updated */
   cursor: pointer;
-  font-size: 19px;
 }
 
-/* GREETING */
+/* GREETING TEXT CENTERED */
 .greeting {
+  margin-top: 120px;
+  text-align: left;
+  width: 100%;
   color: white;
-  margin-top: 40px;                /* FIX 2 — correct greeting position */
-  margin-bottom: 70px;             /* FIX 3 — correct spacing before chat box */
 }
 
 .greeting h1 {
@@ -82,24 +81,30 @@
 
 .greeting h2 {
   font-size: 26px;
+  opacity: 0.95;
 }
 
-/* CHAT BOX */
+/* CHAT BOX (WHITE INPUT LOOK) */
 .chat-box {
+  margin-top: 180px;
   width: 100%;
   background: white;
   padding: 18px 20px;
-  border-radius: 12px;
+  border-radius: 10px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   font-size: 17px;
   cursor: pointer;
+  box-shadow: 0px 3px 12px rgba(0,0,0,0.12);
+}
+
+.chat-text {
   color: #1a73e8;
-  box-shadow: 0 3px 12px rgba(0,0,0,0.15);
-  margin-top: auto;                /* FIX 4 — pushes box to bottom */
+  font-weight: 500;
 }
 
 .chat-arrow {
+  color: #1a73e8;
   font-size: 20px;
 }
