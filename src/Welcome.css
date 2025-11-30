@@ -16,12 +16,16 @@
   flex-direction: column;
 }
 
-/* TOP BAR */
+/* TOP BAR — UPDATED TO MATCH EXACT UI */
 .top-bar {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  padding-top: 10px;
+  padding-left: 8px;
+  padding-right: 8px;
   color: white;
+  width: 100%;
 }
 
 /* LEFT SIDE PROFILE */
@@ -32,37 +36,39 @@
 }
 
 .avatar {
-  width: 42px;          /* updated to exact match */
-  height: 42px;         /* updated to exact match */
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
 }
 
 .profile-text h4 {
-  font-size: 16px;      /* updated */
+  font-size: 16px;
   font-weight: 600;
-  margin-bottom: 2px;   /* updated */
+  line-height: 1.2;
 }
 
 .profile-text span {
-  font-size: 12.5px;    /* updated */
+  font-size: 12px;
   opacity: 0.9;
 }
 
-/* RIGHT SIDE LANGUAGE + SPEAKER */
+/* RIGHT SIDE LANGUAGE + SPEAKER (UPDATED EXACT LOOK) */
 .top-right {
   display: flex;
   align-items: center;
-  gap: 12px;            /* updated */
-  font-size: 15px;
+  gap: 8px;
+  font-size: 14px;
 }
 
 .language {
   cursor: pointer;
+  opacity: 0.95;
 }
 
 .speaker {
-  font-size: 19px;      /* updated */
+  font-size: 18px;
   cursor: pointer;
+  opacity: 0.95;
 }
 
 /* GREETING TEXT CENTERED */
