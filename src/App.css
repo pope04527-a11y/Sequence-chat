@@ -104,10 +104,11 @@ body {
   background: #115293;
 }
 
-/* WELCOME SCREEN */
+/* WELCOME SCREEN REMOVED — THIS WAS BREAKING YOUR TOP BAR */
+/*
 .welcome-container {
   height: 100vh;
-  background: #1976d2; /* Your blue background */
+  background: #1976d2;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -116,6 +117,7 @@ body {
   text-align: center;
   padding: 20px;
 }
+*/
 
 .welcome-box {
   background: white;
