@@ -12,28 +12,30 @@
   width: 100%;
   background: linear-gradient(#1a73e8, #6bb7ff);
 
-  /* UPDATED: top padding removed so the top bar sits at the very top */
-  padding: 0 20px 20px 20px;
+  /* IMPORTANT: remove top padding so top-bar sits flush under browser chrome */
+  padding: 0 22px 20px 22px;
 
   display: flex;
   flex-direction: column;
 }
 
-/* TOP BAR — NOW FLUSH AT THE TOP */
+/* TOP BAR — NOW FLUSH AT VERY TOP */
 .top-bar {
   display: flex;
   justify-content: space-between;
   align-items: center;
 
-  /* ADDED: remove top spacing */
-  margin-top: 0;
-  padding-top: 15px;
+  /* make sure there's no margin pushing this down */
+  margin: 0;
 
-  padding-left: 8px;
-  padding-right: 8px;
+  /* give a little internal spacing so content isn't jammed to the edge */
+  padding: 12px 8px 10px 8px;
 
   color: white;
   width: 100%;
+  /* ensure it sits visually on top even if other rules try to push it */
+  position: relative;
+  top: 0;
 }
 
 /* LEFT SIDE PROFILE */
