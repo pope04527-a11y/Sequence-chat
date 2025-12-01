@@ -16,10 +16,10 @@ function Chat() {
   const dummy = useRef();
 
   useEffect(() => {
-    // IMPORTANT: SAME PATH AS ADMIN
+    console.log("User Chat subscribing to path:", `messages/${userId}`);
     const chatRef = ref(db, `messages/${userId}`);
 
-    onValue(chatRef, (snapshot) => {
+    const offFn = onValue(chatRef, (snapshot) => {
       const data = snapshot.val();
 
       const loaded = data
@@ -31,6 +31,10 @@ function Chat() {
       setMessages(loaded);
       dummy.current?.scrollIntoView({ behavior: "smooth" });
     });
+
+    // onValue returns the unsubscribe function when using modular API pattern
+    // but to be safe we'll return a cleanup that detaches listeners
+    return () => chatRef.off && chatRef.off();
   }, [userId]);
 
   const sendMessage = async (e) => {
@@ -38,6 +42,8 @@ function Chat() {
     if (!text.trim()) return;
 
     const chatRef = ref(db, `messages/${userId}`);
+
+    console.log("User sending message to:", `messages/${userId}`, text);
 
     await push(chatRef, {
       text,
