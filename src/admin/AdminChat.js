@@ -1,93 +1,106 @@
+// src/admin/AdminChat.jsx
 import React, { useEffect, useState, useRef } from "react";
-import { useParams } from "react-router-dom";
+import { ref, onValue, push, set } from "firebase/database";
 import { db } from "../firebase";
-import {
-  ref,
-  onValue,
-  push,
-  serverTimestamp
-} from "firebase/database";
+import { useParams } from "react-router-dom";
 import "./admin.css";
 
 export default function AdminChat() {
   const { userId } = useParams();
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState("");
-  const bottomRef = useRef(null);
+  const bottomRef = useRef();
 
   useEffect(() => {
-    const chatRef = ref(db, `chats/${userId}`);
+    if (!userId) return;
 
-    onValue(chatRef, (snapshot) => {
-      if (snapshot.exists()) {
-        const data = snapshot.val();
-        const list = Object.keys(data).map((key) => ({
-          id: key,
-          ...data[key],
-        }));
-        setMessages(list);
+    const chatRef = ref(db, `messages/${userId}`);
+
+    onValue(chatRef, (snap) => {
+      const data = snap.val();
+      if (!data) {
+        setMessages([]);
+        return;
       }
+
+      const list = Object.entries(data).map(([id, msg]) => ({
+        id,
+        ...msg,
+      }));
+
+      list.sort((a, b) => a.createdAt - b.createdAt);
+
+      setMessages(list);
+
+      setTimeout(() => {
+        bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+      }, 200);
     });
   }, [userId]);
-
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
 
   const sendMessage = async () => {
     if (text.trim() === "") return;
 
-    const msgRef = ref(db, `chats/${userId}`);
+    const msgRef = push(ref(db, `messages/${userId}`));
 
-    await push(msgRef, {
+    const messageData = {
+      text: text.trim(),
       sender: "admin",
-      text,
+      to: userId,
+      createdAt: Date.now(),
       type: "text",
-      createdAt: serverTimestamp(),
-    });
+    };
 
+    await set(msgRef, messageData);
     setText("");
+
+    setTimeout(() => {
+      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, 200);
   };
 
   return (
     <div className="admin-chat-container">
+
       {/* Header */}
       <div className="admin-chat-header">
         <h2>User: {userId}</h2>
       </div>
 
-      {/* Messages List */}
+      {/* Messages area */}
       <div className="admin-chat-body">
+
         {messages.map((msg) => (
           <div
             key={msg.id}
-            className={`chat-bubble ${
-              msg.sender === "admin" ? "chat-admin" : "chat-user"
-            }`}
+            className={
+              msg.sender === "admin"
+                ? "chat-bubble admin-bubble"
+                : "chat-bubble user-bubble"
+            }
           >
-            <p>{msg.text}</p>
-            <span>
-              {msg.createdAt
-                ? new Date(msg.createdAt).toLocaleTimeString()
-                : ""}
-            </span>
+            {msg.text}
+            <div className="chat-time">
+              {new Date(msg.createdAt).toLocaleTimeString()}
+            </div>
           </div>
         ))}
 
         <div ref={bottomRef}></div>
       </div>
 
-      {/* Message Input */}
+      {/* Input */}
       <div className="admin-chat-input">
         <input
           type="text"
           placeholder="Type a message..."
           value={text}
           onChange={(e) => setText(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && sendMessage()}
         />
-
         <button onClick={sendMessage}>Send</button>
       </div>
+
     </div>
   );
 }
