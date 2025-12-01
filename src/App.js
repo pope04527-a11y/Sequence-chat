@@ -6,11 +6,8 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-d
 import Welcome from "./Welcome";
 import Chat from "./Chat";
 
-// Admin pages
-import AdminDashboard from "./admin/AdminDashboard";
-import AdminUsers from "./admin/AdminUsers";
-import AdminMessages from "./admin/AdminMessages";
-import AdminChat from "./admin/AdminChat";
+// Admin pages (new AdminApp)
+import AdminApp from "./admin/AdminApp"; // <-- new integrated admin app
 
 import "./App.css";
 
@@ -21,34 +18,22 @@ function App() {
   return (
     <Router>
       <Routes>
-
         {/* Public Pages */}
         <Route path="/" element={<Welcome />} />
         <Route path="/chat" element={<Chat />} />
 
-        {/* Admin Pages */}
+        {/* Integrated Admin App (handles sidebar + chat + details) */}
         <Route
-          path="/admin"
-          element={isAdmin ? <AdminDashboard /> : <Navigate to="/" />}
-        />
-        <Route
-          path="/admin/users"
-          element={isAdmin ? <AdminUsers /> : <Navigate to="/" />}
-        />
-        <Route
-          path="/admin/messages"
-          element={isAdmin ? <AdminMessages /> : <Navigate to="/" />}
+          path="/admin/*"
+          element={isAdmin ? <AdminApp /> : <Navigate to="/" />}
         />
 
-        {/* Single admin chat */}
-        <Route
-          path="/admin/chat/:userId"
-          element={isAdmin ? <AdminChat /> : <Navigate to="/" />}
-        />
+        {/* Keep old direct admin routes if you still need them (optional)
+            If you prefer the AdminApp to fully replace them, you can remove them.
+        */}
 
         {/* Fallback */}
         <Route path="*" element={<Navigate to="/" />} />
-
       </Routes>
     </Router>
   );
