@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { collection, getDocs, orderBy, query } from "firebase/firestore";
+import { ref, onValue } from "firebase/database";
 import { db } from "../firebase";
 import "./admin.css";
 
@@ -7,23 +7,26 @@ export default function AdminMessages() {
   const [messages, setMessages] = useState([]);
 
   useEffect(() => {
-    const loadMessages = async () => {
-      try {
-        const q = query(collection(db, "messages"), orderBy("timestamp", "desc"));
-        const snapshot = await getDocs(q);
+    const messagesRef = ref(db, "messages");
 
-        const list = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data()
-        }));
+    onValue(messagesRef, (snapshot) => {
+      const data = snapshot.val();
 
-        setMessages(list);
-      } catch (error) {
-        console.error("Error loading messages:", error);
+      if (!data) {
+        setMessages([]);
+        return;
       }
-    };
 
-    loadMessages();
+      const list = Object.entries(data).map(([id, value]) => ({
+        id,
+        ...value,
+      }));
+
+      // Sort: newest first
+      list.sort((a, b) => b.createdAt - a.createdAt);
+
+      setMessages(list);
+    });
   }, []);
 
   return (
@@ -36,9 +39,9 @@ export default function AdminMessages() {
         <table className="admin-table">
           <thead>
             <tr>
-              <th>User ID</th>
-              <th>To</th>
+              <th>Sender</th>
               <th>Message</th>
+              <th>Type</th>
               <th>Time</th>
             </tr>
           </thead>
@@ -46,10 +49,10 @@ export default function AdminMessages() {
           <tbody>
             {messages.map((msg) => (
               <tr key={msg.id}>
-                <td>{msg.userId}</td>
-                <td>{msg.to}</td>
+                <td>{msg.sender || "unknown"}</td>
                 <td>{msg.text}</td>
-                <td>{msg.timestamp?.toDate().toLocaleString()}</td>
+                <td>{msg.type}</td>
+                <td>{new Date(msg.createdAt).toLocaleString()}</td>
               </tr>
             ))}
           </tbody>
