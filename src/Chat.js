@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import "./Chat.css";
-import { db, pushMessageWithFile } from "./firebase";
+import { db } from "./firebase";
 import { ref, push, onValue } from "firebase/database";
 
 // Get user ID from URL
@@ -34,7 +34,6 @@ function Chat() {
       dummy.current?.scrollIntoView({ behavior: "smooth" });
     });
 
-    // cleanup
     return () => chatRef.off && chatRef.off();
   }, [userId]);
 
@@ -48,7 +47,7 @@ function Chat() {
 
     await push(chatRef, {
       text,
-      sender: userId, // USER IDENTIFIER
+      sender: userId,
       createdAt: Date.now(),
       type: "text",
     });
@@ -61,42 +60,48 @@ function Chat() {
     fileRef.current && fileRef.current.click();
   };
 
-  // Handle file selection and upload
+  // ⭐ UPDATED FILE UPLOAD HANDLER (Cloudinary → Netlify)
   const handleFile = async (e) => {
-    const file = e.target.files && e.target.files[0];
-    if (!file) return;
+    const f = e.target.files && e.target.files[0];
+    if (!f) return;
 
-    // show uploading UI
-    setUploading({ name: file.name, progress: 0 });
-    try {
-      const meta = {
-        type: file.type && file.type.startsWith("image") ? "image" : "file",
-        fileName: file.name,
-        sender: userId,
-      };
-
-      const result = await pushMessageWithFile(
-        userId,
-        file,
-        meta,
-        (percent) => {
-          // progress callback (0-100)
-          setUploading((u) => ({ ...(u || {}), progress: Math.round(percent) }));
-          console.log("upload progress", percent);
-        }
-      );
-
-      console.log("Upload complete:", result);
-    } catch (err) {
-      console.error("Upload failed", err);
-      alert("Upload failed. See console for details.");
-    } finally {
-      setUploading(null);
-      // allow selecting same file again
+    const reader = new FileReader();
+    reader.onload = async () => {
       try {
-        e.target.value = "";
-      } catch (err) {}
-    }
+        const result = reader.result;
+        const base64 = result.split(",")[1];
+
+        const res = await fetch("/.netlify/functions/upload", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            fileName: f.name,
+            contentType: f.type,
+            data: base64,
+          }),
+        });
+
+        if (!res.ok) throw new Error("Upload failed");
+        const { url } = await res.json();
+
+        // write message to RTDB
+        const chatRef = ref(db, `messages/${userId}`);
+        await push(chatRef, {
+          sender: userId,
+          type: f.type && f.type.startsWith("image") ? "image" : "file",
+          url,
+          fileName: f.name,
+          createdAt: Date.now(),
+        });
+      } catch (err) {
+        console.error("client upload error", err);
+        alert("Upload failed");
+      } finally {
+        try { e.target.value = ""; } catch {}
+      }
+    };
+
+    reader.readAsDataURL(f);
   };
 
   return (
@@ -174,7 +179,9 @@ function ChatBubble({ message, userId }) {
         ) : (
           <p>{message.text}</p>
         )}
-        <div style={{ fontSize: 11, color: "#777", marginTop: 6 }}>{message.createdAt ? new Date(message.createdAt).toLocaleTimeString() : ""}</div>
+        <div style={{ fontSize: 11, color: "#777", marginTop: 6 }}>
+          {message.createdAt ? new Date(message.createdAt).toLocaleTimeString() : ""}
+        </div>
       </div>
     </div>
   );
