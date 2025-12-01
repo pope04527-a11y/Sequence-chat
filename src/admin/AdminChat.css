@@ -16,74 +16,84 @@
   position: sticky;
   top: 0;
   z-index: 10;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 /* Chat body */
 .admin-chat-body {
   flex: 1;
-  padding: 15px;
+  padding: 20px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
+  scrollbar-width: thin;
 }
 
 /* Bubbles */
 .bubble-left,
 .bubble-right {
-  max-width: 65%;
+  max-width: 70%;
   padding: 10px 14px;
-  border-radius: 10px;
-  position: relative;
+  border-radius: 12px;
+  box-shadow: 0px 1px 2px rgba(0,0,0,0.15);
+  word-break: break-word;
 }
 
 /* User bubbles */
 .bubble-left {
   background: #ffffff;
   align-self: flex-start;
-  border-radius: 10px 10px 10px 0;
+  border-radius: 12px 12px 12px 0;
 }
 
 /* Admin bubbles */
 .bubble-right {
   background: #dcf8c6;
   align-self: flex-end;
-  border-radius: 10px 10px 0 10px;
+  border-radius: 12px 12px 0 12px;
 }
 
 /* Text */
 .bubble-text {
   font-size: 15px;
-  color: #333;
+  color: #222;
 }
 
-/* Time */
+/* Time stamp */
 .bubble-time {
   font-size: 11px;
   color: #666;
   text-align: right;
-  margin-top: 4px;
+  margin-top: 5px;
 }
 
-/* Input area */
+/* Input bar */
 .admin-chat-input {
   display: flex;
   padding: 10px;
-  background: #fff;
+  background: #ffffff;
   border-top: 1px solid #ddd;
+  gap: 10px;
 }
 
+/* Input field */
 .admin-chat-input input {
   flex: 1;
-  padding: 10px;
+  padding: 10px 12px;
   font-size: 15px;
-  border: 1px solid #ddd;
+  border: 1px solid #ccc;
   border-radius: 6px;
   outline: none;
+  transition: border-color 0.2s ease;
 }
 
+.admin-chat-input input:focus {
+  border-color: #0a7b6c;
+}
+
+/* Button */
 .admin-chat-input button {
-  margin-left: 10px;
   padding: 10px 18px;
   background: #075e54;
   color: white;
@@ -91,8 +101,9 @@
   border: none;
   border-radius: 6px;
   cursor: pointer;
+  transition: background 0.2s ease;
 }
 
 .admin-chat-input button:hover {
-  background: #0a7b6c;
+  background: #0c7e6c;
 }
