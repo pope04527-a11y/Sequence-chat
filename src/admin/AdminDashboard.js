@@ -8,10 +8,14 @@ export default function AdminDashboard() {
       <h1 className="admin-title">Admin Dashboard</h1>
 
       <div className="admin-buttons">
-        <Link to="/admin/users" className="admin-btn">Manage Users</Link>
-        <Link to="/admin/messages" className="admin-btn">View All Messages</Link>
+        <Link to="/admin/users" className="admin-btn">
+          Manage Users
+        </Link>
+
+        <Link to="/admin/messages" className="admin-btn">
+          View All Messages
+        </Link>
       </div>
     </div>
   );
 }
-
