@@ -25,16 +25,25 @@ export default function AdminMessages() {
       }));
 
       // Sort newest first
-      list.sort((a, b) => b.createdAt - a.createdAt);
+      list.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
 
       setMessages(list);
     });
   }, []);
 
-  // When clicking a row
+  // Handle navigating to a specific chat
   const openChat = (msg) => {
-    const userId =
-      msg.sender !== "admin" ? msg.sender : msg.to || "unknown";
+    let userId = "unknown";
+
+    // If the message is from a user → open their chat
+    if (msg.sender && msg.sender !== "admin") {
+      userId = msg.sender;
+    }
+
+    // If the message is from admin → open the recipient (msg.to)
+    if (msg.sender === "admin" && msg.to) {
+      userId = msg.to;
+    }
 
     navigate(`/admin/chat/${userId}`);
   };
@@ -64,9 +73,13 @@ export default function AdminMessages() {
                 style={{ cursor: "pointer" }}
               >
                 <td>{msg.sender || "unknown"}</td>
-                <td>{msg.text}</td>
-                <td>{msg.type}</td>
-                <td>{new Date(msg.createdAt).toLocaleString()}</td>
+                <td>{msg.text || "(empty)"}</td>
+                <td>{msg.type || "text"}</td>
+                <td>
+                  {msg.createdAt
+                    ? new Date(msg.createdAt).toLocaleString()
+                    : "—"}
+                </td>
               </tr>
             ))}
           </tbody>
