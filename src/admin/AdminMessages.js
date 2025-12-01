@@ -12,7 +12,7 @@ export default function AdminMessages() {
   useEffect(() => {
     const messagesRef = ref(db, "messages");
 
-    onValue(messagesRef, (snapshot) => {
+    const off = onValue(messagesRef, (snapshot) => {
       const data = snapshot.val();
       if (!data) {
         setUsers([]);
@@ -31,9 +31,7 @@ export default function AdminMessages() {
           if (msgArray.length === 0) return null;
 
           // Sort by date (newest first)
-          msgArray.sort(
-            (a, b) => (b.createdAt || 0) - (a.createdAt || 0)
-          );
+          msgArray.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
 
           const latest = msgArray[0];
 
@@ -57,6 +55,8 @@ export default function AdminMessages() {
 
       setUsers(userList);
     });
+
+    return () => off();
   }, []);
 
   const openChat = (userId) => {
