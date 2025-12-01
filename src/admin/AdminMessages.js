@@ -19,22 +19,29 @@ export default function AdminMessages() {
         return;
       }
 
-      const userList = Object.entries(data).map(([userId, msgs]) => {
-        const msgArray = Object.entries(msgs).map(([id, value]) => ({
-          id,
-          ...value,
-        }));
+      const userList = Object.entries(data)
+        .map(([userId, msgs]) => {
+          if (!msgs) return null;
 
-        // Sort messages for this user
-        msgArray.sort((a, b) => b.createdAt - a.createdAt);
+          const msgArray = Object.entries(msgs).map(([id, value]) => ({
+            id,
+            ...value,
+          }));
 
-        return {
-          userId,
-          latestMessage: msgArray[0], // newest msg per user
-        };
-      });
+          // skip users with no messages
+          if (msgArray.length === 0) return null;
 
-      // Sort users by newest message
+          // sort newest first
+          msgArray.sort((a, b) => b.createdAt - a.createdAt);
+
+          return {
+            userId,
+            latestMessage: msgArray[0],
+          };
+        })
+        .filter(Boolean); // remove null entries
+
+      // Sort users by latest message time
       userList.sort(
         (a, b) => b.latestMessage.createdAt - a.latestMessage.createdAt
       );
