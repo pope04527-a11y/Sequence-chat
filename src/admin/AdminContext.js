@@ -29,6 +29,7 @@ export function AdminProvider({ children }) {
 
   useEffect(() => {
     if (!activeConversation) return;
+    console.log("[AdminContext] activeConversation changed ->", activeConversation);
     markConversationRead(activeConversation, agentId).catch(() => {});
   }, [activeConversation, agentId]);
 
