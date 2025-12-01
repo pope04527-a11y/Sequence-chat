@@ -1,18 +1,18 @@
 // src/admin/AdminChat.js
 import React, { useEffect, useRef, useState } from "react";
-import { ref, onValue, push, serverTimestamp } from "firebase/database";
+import { ref, onValue, push } from "firebase/database";
 import { db } from "../firebase";
-import { useParams } from "react-router-dom";
 import "./AdminChat.css";
 
-export default function AdminChat() {
-  const { userId } = useParams();
+export default function AdminChat({ userId }) {
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState("");
   const bottomRef = useRef(null);
 
   useEffect(() => {
-    const messagesRef = ref(db, `messages/${userId}`);
+    if (!userId) return;
+
+    const messagesRef = ref(db, `chats/${userId}`);
 
     return onValue(messagesRef, (snapshot) => {
       const data = snapshot.val();
@@ -23,11 +23,10 @@ export default function AdminChat() {
 
       const msgArray = Object.entries(data)
         .map(([id, msg]) => ({ id, ...msg }))
-        .sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0)); // oldest → newest
+        .sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
 
       setMessages(msgArray);
 
-      // auto-scroll down
       setTimeout(() => {
         bottomRef.current?.scrollIntoView({ behavior: "smooth" });
       }, 50);
@@ -37,30 +36,35 @@ export default function AdminChat() {
   const sendMessage = async () => {
     if (text.trim() === "") return;
 
-    const msgRef = ref(db, `messages/${userId}`);
+    const msgRef = ref(db, `chats/${userId}`);
+
     await push(msgRef, {
       sender: "admin",
       text,
       createdAt: Date.now(),
     });
 
-    setText(""); // clear input
+    setText("");
   };
 
   return (
     <div className="admin-chat-wrapper">
-      <div className="admin-chat-header">Chat with {userId}</div>
+      <div className="admin-chat-header">
+        Chat with <strong>{userId}</strong>
+      </div>
 
       {/* Chat messages */}
       <div className="admin-chat-body">
         {messages.map((msg) => (
           <div
             key={msg.id}
-            className={msg.sender === "admin" ? "bubble-right" : "bubble-left"}
+            className={
+              msg.sender === "admin" ? "bubble-right" : "bubble-left"
+            }
           >
             <div className="bubble-text">{msg.text}</div>
             <div className="bubble-time">
-              {new Date(msg.createdAt || 0).toLocaleTimeString()}
+              {new Date(msg.createdAt).toLocaleTimeString()}
             </div>
           </div>
         ))}
@@ -68,7 +72,7 @@ export default function AdminChat() {
         <div ref={bottomRef}></div>
       </div>
 
-      {/* Input Area */}
+      {/* Input bar */}
       <div className="admin-chat-input">
         <input
           type="text"
