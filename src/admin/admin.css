@@ -24,3 +24,25 @@
   font-size: 18px;
 }
 
+.admin-menu {
+  display: flex;
+  gap: 20px;
+  margin-top: 25px;
+}
+
+.admin-card {
+  background: #1e1e1e;
+  padding: 20px;
+  border-radius: 12px;
+  width: 260px;
+  cursor: pointer;
+  text-decoration: none;
+  color: white;
+  transition: 0.2s;
+  border: 1px solid #333;
+}
+
+.admin-card:hover {
+  background: #333;
+  transform: translateY(-3px);
+}
