@@ -14,17 +14,18 @@ import AdminMessages from "./admin/AdminMessages";
 import "./App.css";
 
 // TEMPORARY ADMIN CHECK (replace later with Firebase Admin logic)
-const isAdmin = true; // change to false to block access
+const isAdmin = true; // set to true while testing admin UI
 
 function App() {
   return (
     <Router>
       <Routes>
-        {/* Public pages */}
+
+        {/* Public Pages */}
         <Route path="/" element={<Welcome />} />
         <Route path="/chat" element={<Chat />} />
 
-        {/* Admin pages */}
+        {/* Admin Pages */}
         <Route
           path="/admin"
           element={isAdmin ? <AdminDashboard /> : <Navigate to="/" />}
@@ -37,6 +38,7 @@ function App() {
           path="/admin/messages"
           element={isAdmin ? <AdminMessages /> : <Navigate to="/" />}
         />
+
       </Routes>
     </Router>
   );
