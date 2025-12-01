@@ -1,6 +1,5 @@
 // src/firebase.js
 // Realtime Database + Storage helpers for Stacks Chat
-// Drop this in to replace your existing src/firebase.js
 
 import { initializeApp } from "firebase/app";
 import {
@@ -12,6 +11,7 @@ import {
   onValue,
   off as dbOff,
   remove as dbRemove,
+  get as dbGet,
 } from "firebase/database";
 import {
   getStorage,
@@ -20,7 +20,6 @@ import {
   getDownloadURL,
 } from "firebase/storage";
 
-// Your Firebase configuration (keep your values)
 const firebaseConfig = {
   apiKey: "AIzaSyDeJhHkhCmsCUe5nFLEb6ey5KruAsNFNuQ",
   authDomain: "stacks-chat-b795c.firebaseapp.com",
@@ -32,30 +31,17 @@ const firebaseConfig = {
   appId: "1:410462423292:web:48dbeb3d6a5149952b2f79",
 };
 
-// Initialize Firebase app, DB and Storage
 const app = initializeApp(firebaseConfig);
 export const db = getDatabase(app);
 export const storage = getStorage(app);
 
-/*
-  Helper functions
-  - messages stored at: messages/{userId}/{messageId}
-  - conversation meta stored at: meta/conversations/{userId}
-  - typing at: typing/{userId}/{agentId}
-  - presence at: presence/{userId}
-  - uploads in Storage at: uploads/{userId}/{timestamp}_{filename}
-*/
+// ----------------- Helpers -----------------
 
-// Push a plain message (text or message object) to a conversation
 export async function pushMessage(userId, message) {
-  if (!userId) throw new Error("pushMessage requires userId");
+  if (!userId) throw new Error("userId required");
   const path = `messages/${userId}`;
-  const payload = {
-    ...message,
-    createdAt: message.createdAt || Date.now(),
-  };
+  const payload = { ...message, createdAt: message.createdAt || Date.now() };
   const newRef = await dbPush(dbRef(db, path), payload);
-  // update conversation meta (last message)
   await dbUpdate(dbRef(db, `meta/conversations/${userId}`), {
     lastMessage: payload.text || (payload.type === "image" ? "Image" : ""),
     lastSender: payload.sender || "unknown",
@@ -65,13 +51,10 @@ export async function pushMessage(userId, message) {
   return newRef.key;
 }
 
-// Upload a file to Firebase Storage and push a message with the download URL
-// file: File object from input
-// meta: { type: 'image'|'file', fileName?, caption? , sender }
 export function pushMessageWithFile(userId, file, meta = {}, onProgress) {
   if (!userId) return Promise.reject(new Error("userId required"));
   const timestamp = Date.now();
-  const safeName = file.name.replace(/\s+/g, "_");
+  const safeName = (file.name || "file").replace(/\s+/g, "_");
   const storagePath = `uploads/${userId}/${timestamp}_${safeName}`;
   const sRef = storageRef(storage, storagePath);
   const uploadTask = uploadBytesResumable(sRef, file);
@@ -107,8 +90,6 @@ export function pushMessageWithFile(userId, file, meta = {}, onProgress) {
   });
 }
 
-// Subscribe to messages for a conversation. onChange receives (messagesArray).
-// Returns an unsubscribe function.
 export function subscribeToMessages(userId, onChange) {
   if (!userId) {
     console.warn("subscribeToMessages called without userId");
@@ -123,80 +104,59 @@ export function subscribeToMessages(userId, onChange) {
       : [];
     onChange(arr);
   };
-  onValue(r, listener);
-  return () => dbOff(r, "value", listener);
+  const unsubscribe = onValue(r, listener);
+  return () => dbOff(r, "value", listener) || unsubscribe();
 }
 
-// Subscribe to conversation meta (for list views): meta/conversations/{userId}
 export function subscribeToConversationMeta(onChange) {
   const r = dbRef(db, "meta/conversations");
-  const listener = (snap) => {
-    const data = snap.val();
-    onChange(data || {});
-  };
-  onValue(r, listener);
-  return () => dbOff(r, "value", listener);
+  const listener = (snap) => onChange(snap.val() || {});
+  const unsubscribe = onValue(r, listener);
+  return () => dbOff(r, "value", listener) || unsubscribe();
 }
 
-// Mark conversation as read by an agent: sets unreadCount = 0 and can set lastReadByAgent
 export async function markConversationRead(userId, agentId) {
   if (!userId) return;
-  const path = `meta/conversations/${userId}`;
-  return dbUpdate(dbRef(db, path), {
+  return dbUpdate(dbRef(db, `meta/conversations/${userId}`), {
     unreadCount: 0,
     lastReadBy: agentId || "admin",
     lastReadAt: Date.now(),
   });
 }
 
-// Increase unread count (call when user sends a message and admin is not active)
 export async function incrementUnread(userId) {
+  if (!userId) return;
   const metaRef = dbRef(db, `meta/conversations/${userId}`);
-  // Simple increment: read, update. For production use a transaction.
-  const snapPromise = new Promise((resolve) => onValue(metaRef, (s) => { resolve(s.val()); }, { onlyOnce: true }));
-  const meta = await snapPromise;
+  const snapshot = await dbGet(metaRef);
+  const meta = snapshot.val();
   const newCount = ((meta && meta.unreadCount) || 0) + 1;
   return dbUpdate(metaRef, { unreadCount: newCount });
 }
 
-// Typing indicator
 export function setTyping(userId, agentId, isTyping) {
   if (!userId || !agentId) return Promise.resolve();
-  const path = `typing/${userId}/${agentId}`;
-  return dbSet(dbRef(db, path), !!isTyping);
+  return dbSet(dbRef(db, `typing/${userId}/${agentId}`), !!isTyping);
 }
 
-// Presence (simple)
 export function setPresence(userId, { online } = { online: true }) {
   if (!userId) return Promise.resolve();
-  const path = `presence/${userId}`;
-  return dbUpdate(dbRef(db, path), { online: !!online, lastSeen: online ? null : Date.now() });
+  return dbUpdate(dbRef(db, `presence/${userId}`), { online: !!online, lastSeen: online ? null : Date.now() });
 }
 
-// Utility: delete a message
 export async function deleteMessage(userId, messageId) {
   if (!userId || !messageId) return;
   await dbRemove(dbRef(db, `messages/${userId}/${messageId}`));
-  // Optionally recompute lastMessage in meta/conversations (not implemented here).
 }
 
-// Small helper to update conversation meta (assign agent, close/open, tags)
 export async function updateConversationMeta(userId, patch = {}) {
   if (!userId) return;
   return dbUpdate(dbRef(db, `meta/conversations/${userId}`), patch);
 }
 
-// Convenience: build a message object for UI
 export function buildTextMessage(sender, text) {
-  return {
-    text,
-    sender,
-    type: "text",
-    createdAt: Date.now(),
-  };
+  return { text, sender, type: "text", createdAt: Date.now() };
 }
 
-// Exports summary
 export default {
   db,
   storage,
