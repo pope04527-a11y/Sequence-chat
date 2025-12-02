@@ -2,7 +2,10 @@
 <html>
 <head>
   <title>Supabase File Upload Demo</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+
+  <!-- Correct CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
   <style>
     body { font-family: sans-serif; margin: 2em; }
     #result { margin-top: 1em; }
@@ -12,40 +15,52 @@
 </head>
 <body>
   <h2>Supabase File Upload Demo</h2>
+
   <input type="file" id="myfile" />
   <button onclick="upload()">Upload</button>
+
   <div id="result"></div>
 
   <script>
     const supabaseUrl = "https://rpxhuitnejkxmeyzzpyd.supabase.co";
     const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJweGh1aXRuZWpreG1leXp6cHlkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ2NDY5MzQsImV4cCI6MjA4MDIyMjkzNH0.aS4iMk_DJ0hMOG8Apn6T5kzLFrtLt8AKQNZ9RFaQRDU";
 
-    const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+    /* FIXED:
+       DO NOT override "supabase" — use a new variable name.
+    */
+    const client = supabase.createClient(supabaseUrl, supabaseKey);
 
     async function upload() {
-      const input = document.getElementById('myfile');
+      const input = document.getElementById("myfile");
       const file = input.files[0];
+
       if (!file) return alert("No file selected!");
 
-      document.getElementById('result').innerText = "Uploading...";
+      document.getElementById("result").innerText = "Uploading...";
 
       const filePath = `uploads/${Date.now()}_${file.name}`;
 
-      const { data, error } = await supabase.storage
+      const { data, error } = await client.storage
         .from("public-files")
-        .upload(filePath, file, { cacheControl: "3600", upsert: false });
+        .upload(filePath, file, {
+          cacheControl: "3600",
+          upsert: false
+        });
 
       if (error) {
-        document.getElementById('result').innerHTML = `<span style="color:red;">${error.message}</span>`;
+        document.getElementById("result").innerHTML =
+          `<span style="color:red;">${error.message}</span>`;
         return;
       }
 
-      const { data: urlData } = supabase.storage
+      const { data: urlData } = client.storage
         .from("public-files")
         .getPublicUrl(filePath);
 
-      document.getElementById('result').innerHTML =
-        `<b>Success! Public URL:</b><br><a href="${urlData.publicUrl}" target="_blank">${urlData.publicUrl}</a>`;
+      document.getElementById("result").innerHTML = `
+        <b>Success! Public URL:</b><br>
+        <a href="${urlData.publicUrl}" target="_blank">${urlData.publicUrl}</a>
+      `;
     }
   </script>
 </body>
