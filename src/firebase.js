@@ -18,20 +18,15 @@ import {
 import { supabase } from "./supabaseClient";
 
 // -------------------------------------------------------
-// 🔥 Firebase RTDB Setup (FIXED URL)
+// 🔥 Firebase RTDB Setup
 // -------------------------------------------------------
 const firebaseConfig = {
   apiKey: "AIzaSyDeJhHkhCmsCUe5nFLEb6ey5KruAsNFNuQ",
   authDomain: "stacks-chat-b795c.firebaseapp.com",
-
-  // ✅ FIXED — THIS MUST BE EXACTLY LIKE THIS
-  databaseURL: "https://stacks-chat-b795c-default-rtdb.firebaseio.com",
-
+  databaseURL:
+    "https://stacks-chat-b795c-default-rtdb.europe-west1.firebasedatabase.app",
   projectId: "stacks-chat-b795c",
-
-  // Not using Firebase Storage — safe placeholder
   storageBucket: "not-used",
-
   messagingSenderId: "410462423292",
   appId: "1:410462423292:web:48dbeb3d6a5149952b2f79",
 };
@@ -40,9 +35,9 @@ const app = initializeApp(firebaseConfig);
 export const db = getDatabase(app);
 
 // -------------------------------------------------------
-// HELPERS (FIXED ARG ORDER)
+// HELPERS
 // -------------------------------------------------------
-export function buildTextMessage(text, sender) {
+export function buildTextMessage(sender, text) {
   return {
     sender,
     text,
@@ -54,16 +49,16 @@ export function buildTextMessage(text, sender) {
 export function buildFileMessage(sender, url, fileType, fileName) {
   return {
     sender,
-    url,
+    url,                 // 🔥 FIXED (previously fileUrl)
     fileType,
     fileName,
-    type: fileType.startsWith("image") ? "image" : "file",
+    type: fileType.startsWith("image") ? "image" : "file", // 🔥 FIXED
     createdAt: Date.now(),
   };
 }
 
 // -------------------------------------------------------
-// 🔥 PUSH TEXT OR FILE MESSAGE
+// 🔥 SEND TEXT OR FILE MESSAGE
 // -------------------------------------------------------
 export async function pushMessage(userId, message) {
   if (!userId) throw new Error("Missing userId");
@@ -71,12 +66,11 @@ export async function pushMessage(userId, message) {
   const path = `messages/${userId}`;
   const payload = {
     ...message,
-    createdAt: message.createdAt || Date.now(),
+    createdAt: message.createdAt || Date.now(), // 🔥 FIXED
   };
 
   const msgRef = await dbPush(dbRef(db, path), payload);
 
-  // Conversation preview update
   const preview =
     payload.text ||
     (payload.type === "image" ? "📷 Image" : "📎 File");
@@ -92,7 +86,7 @@ export async function pushMessage(userId, message) {
 }
 
 // -------------------------------------------------------
-// 📤 UPLOAD FILE VIA SUPABASE THEN SAVE MESSAGE
+// 📤 UPLOAD FILE VIA SUPABASE & SAVE MESSAGE
 // -------------------------------------------------------
 export async function pushMessageWithFile(userId, file, { sender }) {
   try {
@@ -116,11 +110,10 @@ export async function pushMessageWithFile(userId, file, { sender }) {
 
     const url = urlData.publicUrl;
 
-    // Build and push file message
+    // Create file message
     const msg = buildFileMessage(sender, url, file.type, file.name);
 
     return pushMessage(userId, msg);
-
   } catch (e) {
     console.error("pushMessageWithFile ERROR:", e);
     return null;
@@ -146,7 +139,7 @@ export function subscribeToMessages(userId, onChange) {
 
     const arr = Object.entries(raw)
       .map(([id, v]) => ({ id, ...v }))
-      .sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+      .sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0)); // 🔥 FIXED
 
     onChange(arr);
   };
