@@ -42,17 +42,20 @@ export async function pushMessage(userId, message) {
   const path = `messages/${userId}`;
   const payload = { ...message, createdAt: message.createdAt || Date.now() };
   const newRef = await dbPush(dbRef(db, path), payload);
+
   await dbUpdate(dbRef(db, `meta/conversations/${userId}`), {
     lastMessage: payload.text || (payload.type === "image" ? "Image" : ""),
     lastSender: payload.sender || "unknown",
     lastTimestamp: payload.createdAt,
     status: "open",
   });
+
   return newRef.key;
 }
 
 export function pushMessageWithFile(userId, file, meta = {}, onProgress) {
   if (!userId) return Promise.reject(new Error("userId required"));
+
   const timestamp = Date.now();
   const safeName = (file.name || "file").replace(/\s+/g, "_");
   const storagePath = `uploads/${userId}/${timestamp}_${safeName}`;
@@ -64,7 +67,8 @@ export function pushMessageWithFile(userId, file, meta = {}, onProgress) {
       "state_changed",
       (snapshot) => {
         if (onProgress) {
-          const percent = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          const percent =
+            (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
           onProgress(percent, snapshot);
         }
       },
@@ -72,14 +76,16 @@ export function pushMessageWithFile(userId, file, meta = {}, onProgress) {
       async () => {
         try {
           const url = await getDownloadURL(uploadTask.snapshot.ref);
+
           const payload = {
             type: meta.type || "file",
             url,
             fileName: meta.fileName || file.name,
             caption: meta.caption || "",
-            sender: meta.sender || "admin",
+            sender: meta.sender || "admin", // FIXED: user OR admin can send file
             createdAt: Date.now(),
           };
+
           const messageId = await pushMessage(userId, payload);
           resolve({ messageId, url });
         } catch (err) {
@@ -95,15 +101,22 @@ export function subscribeToMessages(userId, onChange) {
     console.warn("subscribeToMessages called without userId");
     return () => {};
   }
+
   const path = `messages/${userId}`;
   const r = dbRef(db, path);
+
   const listener = (snap) => {
     const data = snap.val();
     const arr = data
-      ? Object.entries(data).map(([id, v]) => ({ id, ...v })).sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0))
+      ? Object.entries(data)
+          .map(([id, v]) => ({ id, ...v }))
+          .sort(
+            (a, b) => (a.createdAt || 0) - (b.createdAt || 0)
+          )
       : [];
     onChange(arr);
   };
+
   const unsubscribe = onValue(r, listener);
   return () => dbOff(r, "value", listener) || unsubscribe();
 }
@@ -130,6 +143,7 @@ export async function incrementUnread(userId) {
   const snapshot = await dbGet(metaRef);
   const meta = snapshot.val();
   const newCount = ((meta && meta.unreadCount) || 0) + 1;
+
   return dbUpdate(metaRef, { unreadCount: newCount });
 }
 
@@ -140,7 +154,10 @@ export function setTyping(userId, agentId, isTyping) {
 
 export function setPresence(userId, { online } = { online: true }) {
   if (!userId) return Promise.resolve();
-  return dbUpdate(dbRef(db, `presence/${userId}`), { online: !!online, lastSeen: online ? null : Date.now() });
+  return dbUpdate(dbRef(db, `presence/${userId}`), {
+    online: !!online,
+    lastSeen: online ? null : Date.now(),
+  });
 }
 
 export async function deleteMessage(userId, messageId) {
@@ -154,7 +171,12 @@ export async function updateConversationMeta(userId, patch = {}) {
 }
 
 export function buildTextMessage(sender, text) {
-  return { text, sender, type: "text", createdAt: Date.now() };
+  return {
+    text,
+    sender,
+    type: "text",
+    createdAt: Date.now(),
+  };
 }
 
 export default {
