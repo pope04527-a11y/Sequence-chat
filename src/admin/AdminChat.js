@@ -7,7 +7,6 @@ import { useParams } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 
 export default function AdminChat({ userId: propUserId }) {
-  // support both prop (AdminPanel) and URL route param
   const params = useParams();
   const userId = propUserId || params?.userId;
 
@@ -16,9 +15,7 @@ export default function AdminChat({ userId: propUserId }) {
   const [file, setFile] = useState(null);
   const bottomRef = useRef(null);
 
-  // ----------------------------------------------------
-  // Load messages from Firebase
-  // ----------------------------------------------------
+  // --- Load messages (unchanged logic) ---
   useEffect(() => {
     if (!userId) return;
 
@@ -37,7 +34,6 @@ export default function AdminChat({ userId: propUserId }) {
 
       setMessages(msgArray);
 
-      // auto scroll
       setTimeout(() => {
         bottomRef.current?.scrollIntoView({ behavior: "smooth" });
       }, 50);
@@ -46,9 +42,7 @@ export default function AdminChat({ userId: propUserId }) {
     return () => off(messagesRef);
   }, [userId]);
 
-  // ----------------------------------------------------
-  // SEND TEXT MESSAGE — ORIGINAL WORKING LOGIC
-  // ----------------------------------------------------
+  // --- SEND TEXT (unchanged logic) ---
   const sendMessage = async () => {
     if (!text.trim() || !userId) return;
 
@@ -64,15 +58,12 @@ export default function AdminChat({ userId: propUserId }) {
     setText("");
   };
 
-  // ----------------------------------------------------
-  // SEND FILE MESSAGE — SUPABASE ONLY
-  // ----------------------------------------------------
+  // --- FILE UPLOAD (unchanged logic) ---
   const sendFile = async () => {
     if (!file || !userId) return;
 
     const filePath = `uploads/${Date.now()}_${file.name}`;
 
-    // upload file to Supabase bucket
     const { error } = await supabase.storage
       .from("public-files")
       .upload(filePath, file, {
@@ -85,14 +76,12 @@ export default function AdminChat({ userId: propUserId }) {
       return;
     }
 
-    // get public URL
     const { data: urlData } = supabase.storage
       .from("public-files")
       .getPublicUrl(filePath);
 
     const imageUrl = urlData.publicUrl;
 
-    // push message to Firebase
     const msgRef = ref(db, `messages/${userId}`);
     await push(msgRef, {
       sender: "admin",
@@ -106,31 +95,43 @@ export default function AdminChat({ userId: propUserId }) {
   };
 
   return (
-    <div className="admin-chat-wrapper">
-      <div className="admin-chat-header">
-        Chat with <strong>{userId || "—"}</strong>
+    <div className="adminchat-container">
+
+      {/* HEADER */}
+      <div className="adminchat-header">
+        <div className="adminchat-header-avatar">{userId?.charAt(0)}</div>
+        <div className="adminchat-header-info">
+          <div className="adminchat-header-name">{userId || "Unknown User"}</div>
+          <div className="adminchat-header-status">Online</div>
+        </div>
       </div>
 
-      {/* Chat messages */}
-      <div className="admin-chat-body">
+      {/* BODY (messages) */}
+      <div className="adminchat-body">
         {messages.map((msg) => (
           <div
             key={msg.id}
-            className={msg.sender === "admin" ? "bubble-right" : "bubble-left"}
+            className={
+              msg.sender === "admin"
+                ? "chat-bubble bubble-right"
+                : "chat-bubble bubble-left"
+            }
           >
             {msg.type === "image" ? (
               <img
                 src={msg.imageUrl}
                 alt="upload"
                 className="chat-image"
-                style={{ maxWidth: "200px", borderRadius: "8px" }}
               />
             ) : (
               <div className="bubble-text">{msg.text}</div>
             )}
 
             <div className="bubble-time">
-              {new Date(msg.createdAt || 0).toLocaleTimeString()}
+              {new Date(msg.createdAt || 0).toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
             </div>
           </div>
         ))}
@@ -138,25 +139,30 @@ export default function AdminChat({ userId: propUserId }) {
         <div ref={bottomRef}></div>
       </div>
 
-      {/* Input */}
-      <div className="admin-chat-input">
+      {/* INPUT BAR */}
+      <div className="adminchat-inputbar">
+        <label className="file-btn">
+          📎
+          <input
+            id="adminFileInput"
+            type="file"
+            onChange={(e) => setFile(e.target.files[0])}
+            hidden
+          />
+        </label>
+
         <input
           type="text"
-          placeholder="Type message..."
+          className="message-input"
+          placeholder="Type a message"
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && sendMessage()}
         />
 
-        <button onClick={sendMessage}>Send</button>
-
-        <input
-          id="adminFileInput"
-          type="file"
-          onChange={(e) => setFile(e.target.files[0])}
-        />
-
-        <button onClick={sendFile}>Upload</button>
+        <button className="send-btn" onClick={sendMessage}>
+          ➤
+        </button>
       </div>
     </div>
   );
