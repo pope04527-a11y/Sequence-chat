@@ -49,6 +49,7 @@ export function AdminProvider({ children }) {
     };
   }, [agentId]);
 
+  // Listen to conversation metadata
   useEffect(() => {
     const unsubscribe = subscribeToConversationMeta((metaObj) => {
       setConversationsMap(metaObj || {});
@@ -71,27 +72,33 @@ export function AdminProvider({ children }) {
       .sort((a, b) => (b.lastTimestamp || 0) - (a.lastTimestamp || 0));
   }, [conversationsMap]);
 
-  // =======================================
-  // SEND TEXT MESSAGE
-  // =======================================
+  // ==================================================
+  // SEND TEXT MESSAGE — MATCHES ADMINCHAT.JS
+  // ==================================================
   async function sendTextMessage(userId, text) {
     if (!userId || !text || !text.trim()) return null;
-    const msg = buildTextMessage(agentId, text.trim());
-    return pushMessage(userId, msg);
+
+    // Build a Firebase-friendly message object
+    const message = {
+      sender: agentId,
+      type: "text",
+      text: text.trim(),
+      createdAt: Date.now(),
+    };
+
+    return pushMessage(userId, message);
   }
 
-  // =======================================
-  // SEND FILE MESSAGE (SUPABASE ONLY)
-  // =======================================
+  // ==================================================
+  // SEND FILE MESSAGE — SUPABASE ONLY
+  // ==================================================
   async function sendFileMessage(userId, file, opts = {}, onProgress) {
     if (!file || !userId) return;
 
     const filePath = `uploads/${Date.now()}_${file.name}`;
 
-    // Convert to array buffer (required by Supabase for Safari/Firefox)
     const arrayBuffer = await file.arrayBuffer();
 
-    // Upload to Supabase
     const { error } = await supabase.storage
       .from("public-files")
       .upload(filePath, arrayBuffer, {
@@ -105,24 +112,28 @@ export function AdminProvider({ children }) {
       return null;
     }
 
-    // Get public URL
     const { data: urlData } = supabase.storage
       .from("public-files")
       .getPublicUrl(filePath);
 
     const url = urlData.publicUrl;
 
-    // Push message to Firebase with correct schema
-    return pushMessage(userId, {
+    // Message format expected by ChatMessage.js
+    const msg = {
       sender: agentId,
       type: file.type.startsWith("image") ? "image" : "file",
-      url,              // CORRECT KEY — ChatMessage.js expects this
+      url,
       fileName: file.name,
       fileType: file.type,
       createdAt: Date.now(),
-    });
+    };
+
+    return pushMessage(userId, msg);
   }
 
+  // ==================================================
+  // TYPING + READ STATUS
+  // ==================================================
   function setTypingForActive(isTyping) {
     if (!activeConversation || !agentId) return;
     return setTyping(activeConversation, agentId, !!isTyping);
