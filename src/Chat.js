@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import "./Chat.css";
 import { db } from "./firebase";
 import { ref, push, onValue } from "firebase/database";
+import { supabase } from "./supabaseClient"; // <-- Make sure this exists
 
 function getUserId() {
   const params = new URLSearchParams(window.location.search);
@@ -56,53 +57,57 @@ function Chat() {
     fileRef.current && fileRef.current.click();
   };
 
-  // FIXED FILE UPLOAD
+  // ✅ SUPABASE UPLOAD — CLEAN / FINAL
   const handleFile = async (e) => {
     const f = e.target.files && e.target.files[0];
     if (!f) return;
 
-    const reader = new FileReader();
+    setUploading({ name: f.name, progress: 10 });
 
-    reader.onload = async () => {
-      try {
-        const result = reader.result;
-        const base64 = result.split(",")[1];
+    try {
+      const filePath = `chat/${Date.now()}_${f.name}`;
 
-        // 🔥 must set base64 mode for netlify
-        const res = await fetch("/.netlify/functions/upload", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            fileName: f.name,
-            contentType: f.type,
-            data: base64
-          })
-        });
+      // 1. Upload to Supabase
+      const { data, error } = await supabase.storage
+        .from("public-files")
+        .upload(filePath, f);
 
-        if (!res.ok) throw new Error("Upload failed");
-        const { url } = await res.json();
-
-        const chatRef = ref(db, `messages/${userId}`);
-        await push(chatRef, {
-          sender: userId,
-          type: f.type.startsWith("image") ? "image" : "file",
-          url,
-          fileName: f.name,
-          createdAt: Date.now(),
-        });
-      } catch (err) {
-        console.error("client upload error", err);
+      if (error) {
+        console.error("Supabase upload error:", error);
         alert("Upload failed");
-      } finally {
-        try {
-          e.target.value = "";
-        } catch {}
+        return;
       }
-    };
 
-    reader.readAsDataURL(f);
+      setUploading({ name: f.name, progress: 70 });
+
+      // 2. Get public URL
+      const { data: urlData } = supabase.storage
+        .from("public-files")
+        .getPublicUrl(filePath);
+
+      const url = urlData.publicUrl;
+
+      setUploading({ name: f.name, progress: 100 });
+
+      // 3. Save message to Firebase
+      const chatRef = ref(db, `messages/${userId}`);
+
+      await push(chatRef, {
+        sender: userId,
+        type: f.type.startsWith("image") ? "image" : "file",
+        url,
+        fileName: f.name,
+        createdAt: Date.now(),
+      });
+    } catch (err) {
+      console.error("Upload failed:", err);
+      alert("Upload failed");
+    } finally {
+      try {
+        e.target.value = "";
+      } catch {}
+      setTimeout(() => setUploading(null), 600);
+    }
   };
 
   return (
@@ -189,10 +194,15 @@ function ChatBubble({ message, userId }) {
       <div className={`bubble ${isUser ? "blue" : "grey"}`}>
         {message.type === "image" ? (
           <img src={message.url} alt="sent" className="bubble-img" />
+        ) : message.type === "file" ? (
+          <a href={message.url} target="_blank" rel="noreferrer" style={{ color: "#fff" }}>
+            📄 {message.fileName}
+          </a>
         ) : (
           <p>{message.text}</p>
         )}
-        <div style={{ fontSize: 11, color: "#777", marginTop: 6 }}>
+
+        <div style={{ fontSize: 11, color: "#ddd", marginTop: 6 }}>
           {message.createdAt
             ? new Date(message.createdAt).toLocaleTimeString()
             : ""}
