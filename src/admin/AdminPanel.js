@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { ref, onValue } from "firebase/database";
 import AdminChat from "./AdminChat";
-import "./Admin.css";
+import "./AdminChat.css";
 import { db } from "../firebase";
 
 function AdminPanel() {
