@@ -166,3 +166,145 @@
 .send-btn:hover {
   background: #0a7b70;
 }
+
+/* ----------------------------- */
+/* MAIN ROW ALIGNMENT */
+/* ----------------------------- */
+
+.wa-row {
+  display: flex;
+  width: 100%;
+  padding: 4px 10px;
+}
+
+.wa-row.user {
+  justify-content: flex-start;
+}
+
+.wa-row.admin {
+  justify-content: flex-end;
+}
+
+/* Wrap bubble + menu */
+.wa-msg-wrapper {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+/* ----------------------------- */
+/* BUBBLES */
+/* ----------------------------- */
+
+.wa-bubble {
+  max-width: 75%;
+  padding: 8px 10px;
+  border-radius: 12px;
+  position: relative;
+}
+
+.wa-bubble.user {
+  background: #ffffff;
+  border-top-left-radius: 0;
+}
+
+.wa-bubble.admin {
+  background: #dcf8c6; /* WhatsApp green bubble */
+  border-top-right-radius: 0;
+}
+
+/* ----------------------------- */
+/* MESSAGE TEXT */
+/* ----------------------------- */
+
+.wa-text {
+  font-size: 15px;
+  white-space: pre-wrap;
+}
+
+/* ----------------------------- */
+/* FOOTER (time + ticks) */
+/* ----------------------------- */
+
+.wa-footer {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  margin-top: 4px;
+  gap: 4px;
+}
+
+.wa-time {
+  font-size: 11px;
+  opacity: 0.6;
+}
+
+.wa-ticks {
+  font-size: 13px;
+  color: #30b36a;
+}
+
+/* ----------------------------- */
+/* IMAGE */
+/* ----------------------------- */
+
+.wa-img {
+  width: 100%;
+  border-radius: 10px;
+  margin-top: 4px;
+  cursor: pointer;
+}
+
+/* ----------------------------- */
+/* FILE BUBBLE */
+/* ----------------------------- */
+
+.wa-file {
+  background: #f5f5f5;
+  border-radius: 10px;
+  padding: 10px;
+  display: flex;
+  gap: 10px;
+  cursor: pointer;
+  align-items: center;
+}
+
+.wa-file-icon {
+  font-size: 24px;
+}
+
+.wa-file-name {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* ----------------------------- */
+/* REPLY PREVIEW */
+/* ----------------------------- */
+
+.wa-reply-box {
+  border-left: 3px solid #2f8cff;
+  background: rgba(0, 0, 0, 0.04);
+  padding: 6px 8px;
+  border-radius: 6px;
+  margin-bottom: 8px;
+}
+
+.wa-reply-name {
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 3px;
+}
+
+.wa-reply-snippet {
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+/* ----------------------------- */
+/* ACTION ICON WRAPPER */
+/* ----------------------------- */
+
+.wa-menu {
+  margin-bottom: 8px;
+}
