@@ -1,25 +1,20 @@
 // src/admin/AdminChat.js
 import React, { useEffect, useRef, useState } from "react";
-import { ref, onValue } from "firebase/database";
+import { ref, onValue, push, off } from "firebase/database";
 import { db } from "../firebase";
 import "./AdminChat.css";
 import { useParams } from "react-router-dom";
-import { useAdmin } from "../context/AdminContext";
+import { supabase } from "../supabaseClient";
 
 export default function AdminChat({ userId: propUserId }) {
   const params = useParams();
   const userId = propUserId || params?.userId;
-
-  const { sendTextMessage, sendFileMessage } = useAdmin();
 
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState("");
   const [file, setFile] = useState(null);
   const bottomRef = useRef(null);
 
-  // ================================
-  // LOAD MESSAGES FROM FIREBASE
-  // ================================
   useEffect(() => {
     if (!userId) return;
 
@@ -38,32 +33,62 @@ export default function AdminChat({ userId: propUserId }) {
 
       setMessages(msgArray);
 
-      // Scroll to bottom
       setTimeout(() => {
         bottomRef.current?.scrollIntoView({ behavior: "smooth" });
       }, 50);
     });
 
-    return () => unsubscribe();
+    // FIXED CLEANUP:
+    return () => off(messagesRef);
+
   }, [userId]);
 
-  // ================================
-  // SEND TEXT MESSAGE
-  // ================================
   const sendMessage = async () => {
-    if (!text.trim()) return;
+    if (!text.trim() || !userId) return;
 
-    await sendTextMessage(userId, text.trim());
+    const msgRef = ref(db, `messages/${userId}`);
+
+    await push(msgRef, {
+      sender: "admin",
+      text,
+      createdAt: Date.now(),
+      type: "text",
+    });
+
     setText("");
   };
 
-  // ================================
-  // SEND FILE MESSAGE
-  // ================================
   const sendFile = async () => {
-    if (!file) return;
+    if (!file || !userId) return;
 
-    await sendFileMessage(userId, file);
+    const filePath = `uploads/${Date.now()}_${file.name}`;
+
+    const { error } = await supabase.storage
+      .from("public-files")
+      .upload(filePath, file, {
+        cacheControl: "3600",
+        upsert: false,
+      });
+
+    if (error) {
+      alert("Upload failed: " + error.message);
+      return;
+    }
+
+    const { data: urlData } = supabase.storage
+      .from("public-files")
+      .getPublicUrl(filePath);
+
+    const imageUrl = urlData.publicUrl;
+
+    const msgRef = ref(db, `messages/${userId}`);
+    await push(msgRef, {
+      sender: "admin",
+      imageUrl,
+      createdAt: Date.now(),
+      type: "image",
+    });
+
     setFile(null);
     document.getElementById("adminFileInput").value = "";
   };
@@ -74,7 +99,6 @@ export default function AdminChat({ userId: propUserId }) {
         Chat with <strong>{userId || "—"}</strong>
       </div>
 
-      {/* Messages */}
       <div className="admin-chat-body">
         {messages.map((msg) => (
           <div
@@ -83,23 +107,23 @@ export default function AdminChat({ userId: propUserId }) {
           >
             {msg.type === "image" ? (
               <img
-                src={msg.imageUrl || msg.url}
+                src={msg.imageUrl}
                 alt="uploaded"
                 className="chat-image"
+                style={{ maxWidth: "200px", borderRadius: "8px" }}
               />
             ) : (
               <div className="bubble-text">{msg.text}</div>
             )}
-
             <div className="bubble-time">
               {new Date(msg.createdAt || 0).toLocaleTimeString()}
             </div>
           </div>
         ))}
+
         <div ref={bottomRef}></div>
       </div>
 
-      {/* Input */}
       <div className="admin-chat-input">
         <input
           type="text"
