@@ -1,2 +1,6 @@
+# React Router fallback – always keep this at the bottom
 /*    /index.html   200
-!/*.html
+
+# Direct HTML pages
+/supabase-upload        /supabase-upload.html     200
+/supabase-upload.html   /supabase-upload.html     200
