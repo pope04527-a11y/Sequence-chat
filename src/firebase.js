@@ -27,7 +27,7 @@ const firebaseConfig = {
   databaseURL:
     "https://stacks-chat-b795c-default-rtdb.europe-west1.firebasedatabase.app",
   projectId: "stacks-chat-b795c",
-  storageBucket: "no-storage-used-here",
+  storageBucket: "no-storage-used-here", // not used anymore
   messagingSenderId: "410462423292",
   appId: "1:410462423292:web:48dbeb3d6a5149952b2f79",
 };
@@ -81,7 +81,7 @@ export async function pushMessage(userId, message) {
 }
 
 // -------------------------------------------------------
-// 📤 SEND IMAGE/FILE (Supabase)
+// 📤 SEND IMAGE/FILE (Supabase Upload)
 // -------------------------------------------------------
 export async function pushMessageWithFile(
   userId,
@@ -94,9 +94,7 @@ export async function pushMessageWithFile(
     const fileName = `${timestamp}_${file.name}`;
     const filePath = `uploads/${fileName}`;
 
-    // ----------------------------------------------
     // Upload to Supabase
-    // ----------------------------------------------
     const { data, error } = await supabase.storage
       .from("public-files")
       .upload(filePath, file);
@@ -106,16 +104,14 @@ export async function pushMessageWithFile(
       throw error;
     }
 
-    // PUBLIC URL
+    // Public URL
     const { data: urlData } = supabase.storage
       .from("public-files")
       .getPublicUrl(filePath);
 
     const publicUrl = urlData.publicUrl;
 
-    // ----------------------------------------------
     // Save message to RTDB
-    // ----------------------------------------------
     const msg = buildFileMessage(sender, publicUrl, file.type, file.name);
 
     return pushMessage(userId, msg);
@@ -126,7 +122,16 @@ export async function pushMessageWithFile(
 }
 
 // -------------------------------------------------------
-// Subscriptions, Meta, Presence
+// DELETE MESSAGE
+// -------------------------------------------------------
+export async function deleteMessage(userId, messageId) {
+  if (!userId || !messageId) return;
+
+  return dbRemove(dbRef(db, `messages/${userId}/${messageId}`));
+}
+
+// -------------------------------------------------------
+// SUBSCRIPTIONS & META
 // -------------------------------------------------------
 export function subscribeToMessages(userId, onChange) {
   const r = dbRef(db, `messages/${userId}`);
