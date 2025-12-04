@@ -9,13 +9,6 @@ import "./Admin.css";
 import ChatMessage from "./ChatMessage";
 import DateSeparator from "./DateSeparator";
 
-/*
- FIXES ADDED:
- - Admin text messages now save to Firestore using sendTextMessage()
- - Removed broken CustomEvent sender that saved NOTHING
- - Ensures replies, files, and text all work
-*/
-
 function formatDateHeader(ts) {
   if (!ts) return "";
   const d = new Date(ts);
@@ -82,24 +75,18 @@ export default function ChatPanel() {
     grouped.push({ type: "msg", msg: m, key: m.id });
   });
 
-  // 🔥 FIXED — Now actually sends message to Firestore
   const handleSendText = async (text) => {
     if (!activeConversation) return;
 
-    try {
-      await sendTextMessage(
-        activeConversation,
-        {
-          text,
-          sender: agentId,
-          type: "text",
-        },
-        replyTo
-      );
-    } catch (e) {
-      console.error("Admin text send failed:", e);
-      alert("Failed to send message.");
-    }
+    await sendTextMessage(
+      activeConversation,
+      {
+        text,
+        sender: agentId,
+        type: "text",
+      },
+      replyTo
+    );
 
     setReplyTo(null);
   };
@@ -112,117 +99,75 @@ export default function ChatPanel() {
       [tempId]: { name: file.name, progress: 0 },
     }));
 
-    try {
-      await sendFileMessage(activeConversation, file, {}, (percent) => {
-        setUploads((u) => ({
-          ...u,
-          [tempId]: { name: file.name, progress: percent },
-        }));
-      });
+    await sendFileMessage(activeConversation, file, {}, (percent) => {
+      setUploads((u) => ({
+        ...u,
+        [tempId]: { name: file.name, progress: percent },
+      }));
+    });
 
-      setUploads((u) => {
-        const next = { ...u };
-        delete next[tempId];
-        return next;
-      });
-    } catch (err) {
-      console.error("upload failed", err);
-      setUploads((u) => {
-        const next = { ...u };
-        delete next[tempId];
-        return next;
-      });
-      alert("Upload failed");
-    }
+    setUploads((u) => {
+      const next = { ...u };
+      delete next[tempId];
+      return next;
+    });
   };
 
   const handleReply = (message) => {
     setReplyTo(message);
-    const el = document.querySelector(".chat-composer textarea");
-    if (el) el.focus();
   };
 
   const handleDelete = async (message) => {
     if (!activeConversation || !message?.id) return;
-    try {
-      await firebaseDeleteMessage(activeConversation, message.id);
-      setMessages((prev) => prev.filter((m) => m.id !== message.id));
-    } catch (e) {
-      console.error("delete failed", e);
-      alert("Failed to delete message");
-    }
+    await firebaseDeleteMessage(activeConversation, message.id);
+    setMessages((prev) => prev.filter((m) => m.id !== message.id));
   };
 
   if (!activeConversation)
     return <div className="empty-state">Select a conversation</div>;
 
   return (
-    <div
-      className="chat-panel"
-      style={{ display: "flex", flexDirection: "column", height: "100%" }}
-    >
-      <div className="chat-header-admin">
-        <div>
-          <div className="chat-title">
-            Chat with <strong>{activeConversation}</strong>
-          </div>
-          <div style={{ fontSize: 12, opacity: 0.8 }}>Admin: {agentId}</div>
+    <div className="admin-chat">
+      <div className="adminchat-header">
+        <div className="chat-title">
+          Chat with <strong>{activeConversation}</strong>
         </div>
+        <div className="chat-sub">Admin: {agentId}</div>
       </div>
 
-      <div className="chat-body-admin">
+      <div className="adminchat-body">
         {grouped.length === 0 ? (
           <div className="no-msg">No messages yet</div>
         ) : (
-          grouped.map((item) => {
-            if (item.type === "date") {
-              const label = formatDateHeader(item.ts);
-              return <DateSeparator key={item.key} label={label} />;
-            } else {
-              const m = item.msg;
-              return (
-                <ChatMessage
-                  key={m.id}
-                  m={m}
-                  isAdmin={m.sender === agentId}
-                  onReply={handleReply}
-                  onDelete={handleDelete}
-                  onDownload={() => m.url && window.open(m.url, "_blank")}
-                  repliedMessage={m.replyTo ? messageById[m.replyTo] : null}
-                />
-              );
-            }
-          })
+          grouped.map((item) =>
+            item.type === "date" ? (
+              <DateSeparator key={item.key} label={formatDateHeader(item.ts)} />
+            ) : (
+              <ChatMessage
+                key={item.msg.id}
+                m={item.msg}
+                isAdmin={item.msg.sender === agentId}
+                onReply={handleReply}
+                onDelete={handleDelete}
+                onDownload={() =>
+                  item.msg.url && window.open(item.msg.url, "_blank")
+                }
+                repliedMessage={
+                  item.msg.replyTo ? messageById[item.msg.replyTo] : null
+                }
+              />
+            )
+          )
         )}
 
         {Object.entries(uploads).map(([k, u]) => (
-          <div key={k} style={{ alignSelf: "flex-end", marginTop: 8 }}>
-            <div
-              style={{
-                padding: 10,
-                borderRadius: 10,
-                background: "#fff",
-                width: 240,
-              }}
-            >
-              <div style={{ fontSize: 13, fontWeight: 700 }}>{u.name}</div>
+          <div key={k} className="upload-bubble">
+            <div className="upload-name">{u.name}</div>
+            <div className="upload-bar">
               <div
-                style={{
-                  height: 6,
-                  background: "#eee",
-                  borderRadius: 6,
-                  marginTop: 8,
-                }}
-              >
-                <div
-                  style={{
-                    width: `${u.progress}%`,
-                    height: "100%",
-                    background: "var(--accent)",
-                    borderRadius: 6,
-                  }}
-                />
-              </div>
+                className="upload-bar-fill"
+                style={{ width: `${u.progress}%` }}
+              />
             </div>
           </div>
         ))}
@@ -230,13 +175,15 @@ export default function ChatPanel() {
         <div ref={scrollRef} />
       </div>
 
-      <Composer
-        onSendText={handleSendText}
-        onSendFile={handleSendFile}
-        onTyping={() => {}}
-        replyTo={replyTo}
-        onCancelReply={() => setReplyTo(null)}
-      />
+      <div className="adminchat-inputbar">
+        <Composer
+          onSendText={handleSendText}
+          onSendFile={handleSendFile}
+          replyTo={replyTo}
+          onCancelReply={() => setReplyTo(null)}
+          onTyping={() => {}}
+        />
+      </div>
     </div>
   );
 }
