@@ -17,6 +17,7 @@ export default function ChatMessage({
       })
     : "";
 
+  // use both row and bubble naming so CSS covers all
   const rowClass = isAdmin ? "row-admin" : "row-user";
   const bubbleClass = isAdmin ? "bubble-admin" : "bubble-user";
 
@@ -24,6 +25,7 @@ export default function ChatMessage({
     <div className={rowClass}>
       <div className="bubble-wrapper">
         <div className={bubbleClass}>
+          {/* Reply preview */}
           {repliedMessage && (
             <div className="reply-box">
               <div className="reply-name">
@@ -41,18 +43,18 @@ export default function ChatMessage({
             </div>
           )}
 
+          {/* Content */}
           {m.type === "image" ? (
             <img
-              src={m.url}
+              src={m.url || m.imageUrl}
               alt={m.fileName || "image"}
               className="bubble-img"
+              onClick={() => (m.url || m.imageUrl) && window.open(m.url || m.imageUrl, "_blank")}
             />
           ) : m.type === "file" ? (
             <div
               className="bubble-file"
-              onClick={() =>
-                m.url ? window.open(m.url, "_blank") : onDownload && onDownload(m)
-              }
+              onClick={() => (m.url ? window.open(m.url, "_blank") : onDownload && onDownload(m))}
             >
               <div className="file-icon">📄</div>
               <div className="file-name">{m.fileName || "Download file"}</div>
@@ -61,6 +63,7 @@ export default function ChatMessage({
             <div className="bubble-text">{m.text}</div>
           )}
 
+          {/* footer */}
           <div className="bubble-footer">
             <span className="bubble-time">{timeLabel}</span>
             {isAdmin && <span className="bubble-ticks">✓✓</span>}
@@ -71,9 +74,7 @@ export default function ChatMessage({
           <MessageMenu
             onReply={() => onReply && onReply(m)}
             onDelete={() => onDelete && onDelete(m)}
-            onDownload={() =>
-              m.url ? window.open(m.url, "_blank") : onDownload && onDownload(m)
-            }
+            onDownload={() => (m.url ? window.open(m.url, "_blank") : onDownload && onDownload(m))}
           />
         </div>
       </div>
