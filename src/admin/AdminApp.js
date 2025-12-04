@@ -2,12 +2,11 @@ import React, { useEffect } from "react";
 import { AdminProvider, useAdmin } from "./AdminContext";
 import ConversationsPanel from "./ConversationsPanel";
 import ChatPanel from "./ChatPanel";
-import ConversationDetails from "./ConversationDetails";
 import "./Admin.css";
 
 /*
  AdminApp wraps the admin UI and reads the URL to set activeConversation:
- - /admin -> normal layout (sidebar + chat + details)
+ - /admin -> normal layout (sidebar + chat)
  - /admin/chat/:userId -> opens the chat page for that user (sidebar still accessible)
 */
 
@@ -37,15 +36,12 @@ function AdminAppInner() {
     return () => window.removeEventListener("popstate", onPop);
   }, [setActiveConversation]);
 
-  // single layout: sidebar, main chat, details
+  // layout: left sidebar + main chat (details removed per screenshot)
   return (
     <div className="admin-container" style={{ display: "flex", alignItems: "stretch", height: "100vh" }}>
       <ConversationsPanel />
-      <div style={{ flex: 1, minWidth: 0 }}>
+      <div className="admin-main" style={{ flex: 1, minWidth: 0 }}>
         <ChatPanel />
-      </div>
-      <div style={{ width: 320 }}>
-        <ConversationDetails />
       </div>
     </div>
   );
