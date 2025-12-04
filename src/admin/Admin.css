@@ -1,3 +1,4 @@
+```css
 /* ==========================================================
    Admin.css — Dark Modern Theme (refined for screenshot match)
    Supports bubble-left/right, bubble-admin/user, row-admin/user
@@ -43,6 +44,26 @@ body{
   overflow:hidden;
   gap:0;
   background: linear-gradient(180deg, rgba(12,14,20,0.9), rgba(10,11,15,0.98));
+}
+
+/* admin-main is the main content column (chat). ensure it can shrink/grow properly */
+.admin-main {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0; /* important so flex children can overflow/scroll correctly */
+  height: 100vh;
+}
+
+/* chat-stage centers the chat content and restricts max width like screenshot */
+.chat-stage {
+  width: 820px; /* approximate centered chat column width from screenshot */
+  max-width: calc(100% - 80px);
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-width: 0;
 }
 
 /* ---------- Left Sidebar (conversations) ---------- */
@@ -171,14 +192,27 @@ body{
 .adminchat-header-name{ font-size:16px; font-weight:700; color:var(--text) }
 .adminchat-header-status{ font-size:13px; color:var(--muted) }
 
-/* chat body */
+/* chat body - must be a flexible scrollable child inside the chat-stage */
 .adminchat-body{
-  flex:1;
-  padding:40px 48px; /* increased padding for spacing like screenshot */
+  flex:1;           /* allows it to grow and shrink inside .chat-stage */
+  min-height:0;     /* critical for flexbox overflow to work */
+  padding:40px 0;   /* vertical padding preserved; horizontal centering handled by chat-stage */
   overflow-y:auto;
   display:flex;
   flex-direction:column;
   gap:8px;
+  align-items: center; /* center bubbles within the constrained column */
+}
+
+/* When messages are centered, the bubble-wrapper should be limited to chat column width */
+.bubble-wrapper {
+  display:flex;
+  align-items:flex-end;
+  gap:8px;
+  max-width:100%;
+  overflow: visible; /* allow menus / avatars to overflow */
+  width: 100%;
+  justify-content: flex-start;
 }
 
 /* date separator */
@@ -194,11 +228,8 @@ body{
 
 /* ---------- Message rows — left/right alignment ---------- */
 /* support row-admin/row-user and generic msg-row */
-.row-admin, .admin-row, .msg-row.admin { display:flex; justify-content:flex-end; margin-bottom:12px; }
-.row-user, .user-row, .msg-row.user { display:flex; justify-content:flex-start; margin-bottom:12px; }
-
-/* wrapper for bubble + menu */
-.bubble-wrapper, .wa-msg-wrapper, .wa-msg{ display:flex; align-items:flex-end; gap:8px; max-width:100% }
+.row-admin, .admin-row, .msg-row.admin { display:flex; justify-content:flex-end; margin-bottom:12px; width:100%; }
+.row-user, .user-row, .msg-row.user { display:flex; justify-content:flex-start; margin-bottom:12px; width:100%; }
 
 /* ---------- Bubbles — multiple names supported ---------- */
 /* generic chat-bubble used by AdminChat older component */
@@ -206,7 +237,7 @@ body{
   display:inline-block;
   padding:12px 16px;
   border-radius: var(--radius-lg);
-  max-width:58%; /* slightly narrower to match screenshot */
+  max-width:720px; /* ensure bubble fits within centered column */
   word-break:break-word;
   box-shadow: 0 8px 26px rgba(2,6,23,0.55);
   font-size:15px;
@@ -247,6 +278,7 @@ body{
   color:inherit;
   font-size:15px;
   white-space:pre-wrap;
+  max-width: 100%;
 }
 
 /* reply preview inside bubble */
@@ -256,6 +288,7 @@ body{
   padding:8px 10px;
   margin-bottom:8px;
   border-radius:8px;
+  color: var(--muted);
 }
 .reply-name, .wa-reply-name { font-weight:700; font-size:13px; color:var(--text); margin-bottom:4px }
 .reply-snippet, .wa-reply-snippet { font-size:13px; color:var(--muted) }
@@ -297,8 +330,14 @@ body{
 .bubble-time, .wa-time { font-size:12px; color:var(--muted); margin-left:6px }
 .bubble-ticks, .wa-ticks { color: rgba(255,255,255,0.95); font-size:13px }
 
-/* action menu wrapper */
-.bubble-menu, .wa-menu { margin-bottom:6px; align-self:flex-end }
+/* action menu wrapper - position relative and high z-index so dropdowns are visible */
+.bubble-menu {
+  margin-bottom:6px;
+  align-self:flex-end;
+  position: relative;
+  z-index: 30;
+}
+.menu-dropdown { z-index: 60; } /* used by MessageMenu inline dropdown */
 
 /* ---------- Uploads (progress) ---------- */
 .upload-bubble {
@@ -314,11 +353,14 @@ body{
 .upload-bar-fill{ height:100%; background:var(--accent); border-radius:8px }
 
 /* ---------- Composer / Input Bar ---------- */
+/* We keep the input styling but ensure it's used inside .chat-stage so it's centered */
 .adminchat-inputbar{
   padding:12px 18px;
   border-top:1px solid rgba(255,255,255,0.02);
   background: linear-gradient(180deg, rgba(4,5,8,0.6), rgba(8,9,12,0.6));
   display:flex; gap:12px; align-items:center;
+  width: 100%;
+  box-sizing: border-box;
 }
 .message-input{
   flex:1;
@@ -346,6 +388,232 @@ body{
 /* ---------- Responsive ---------- */
 @media (max-width:900px){
   .admin-users{ width:260px }
-  .adminchat-body{ padding:18px }
+  .chat-stage{ width: 100%; max-width: calc(100% - 32px); padding: 0 16px }
+  .adminchat-body{ padding:18px 0 }
   .bubble-img{ width:220px }
+}
+```
+```
+
+
+```javascript name=src/admin/ChatPanel.js
+import React, { useEffect, useRef, useState } from "react";
+import {
+  subscribeToMessages,
+  deleteMessage as firebaseDeleteMessage,
+} from "../firebase";
+import { useAdmin } from "./AdminContext";
+import Composer from "./Composer";
+import "./Admin.css";
+import ChatMessage from "./ChatMessage";
+import DateSeparator from "./DateSeparator";
+
+function formatDateHeader(ts) {
+  if (!ts) return "";
+  const d = new Date(ts);
+  const today = new Date();
+  const dayStart = new Date(
+    today.getFullYear(),
+    today.getMonth(),
+    today.getDate()
+  ).getTime();
+  const yesterdayStart = dayStart - 24 * 60 * 60 * 1000;
+
+  if (ts >= dayStart) return "Today";
+  if (ts >= yesterdayStart) return "Yesterday";
+  return d.toLocaleDateString();
+}
+
+export default function ChatPanel() {
+  const {
+    activeConversation,
+    agentId,
+    sendFileMessage,
+    sendTextMessage,
+  } = useAdmin();
+
+  const [messages, setMessages] = useState([]);
+  const [replyTo, setReplyTo] = useState(null);
+  const [uploads, setUploads] = useState({});
+  const scrollRef = useRef(null);
+  const bodyRef = useRef(null);
+
+  useEffect(() => {
+    if (!activeConversation) {
+      setMessages([]);
+      setReplyTo(null);
+      return;
+    }
+    const unsub = subscribeToMessages(activeConversation, (msgs) => {
+      setMessages(msgs);
+      setTimeout(() => {
+        // smooth but reliable scroll to bottom
+        if (bodyRef.current) bodyRef.current.scrollTop = bodyRef.current.scrollHeight;
+        scrollRef.current?.scrollIntoView({ behavior: "smooth" });
+      }, 80);
+    });
+    return () => unsub && unsub();
+  }, [activeConversation]);
+
+  const messageById = messages.reduce((acc, m) => {
+    acc[m.id] = m;
+    return acc;
+  }, {});
+
+  const grouped = [];
+  let lastDay = null;
+  messages.forEach((m) => {
+    const day = new Date(m.createdAt || 0);
+    const dayKey = new Date(
+      day.getFullYear(),
+      day.getMonth(),
+      day.getDate()
+    ).getTime();
+    if (lastDay !== dayKey) {
+      grouped.push({ type: "date", ts: m.createdAt, key: `d-${dayKey}` });
+      lastDay = dayKey;
+    }
+    grouped.push({ type: "msg", msg: m, key: m.id });
+  });
+
+  const handleSendText = async (text) => {
+    if (!activeConversation) return;
+
+    try {
+      await sendTextMessage(
+        activeConversation,
+        {
+          text,
+          sender: agentId,
+          type: "text",
+        },
+        replyTo
+      );
+    } catch (e) {
+      console.error("Admin text send failed:", e);
+      alert("Failed to send message.");
+    }
+
+    setReplyTo(null);
+  };
+
+  const handleSendFile = async (file, onProgress) => {
+    if (!activeConversation || !sendFileMessage) return;
+    const tempId = `upload_${Date.now()}`;
+    setUploads((u) => ({
+      ...u,
+      [tempId]: { name: file.name, progress: 0 },
+    }));
+
+    try {
+      await sendFileMessage(activeConversation, file, {}, (percent) => {
+        setUploads((u) => ({
+          ...u,
+          [tempId]: { name: file.name, progress: percent },
+        }));
+      });
+    } catch (err) {
+      console.error("upload failed", err);
+      alert("Upload failed");
+    } finally {
+      setUploads((u) => {
+        const next = { ...u };
+        delete next[tempId];
+        return next;
+      });
+    }
+  };
+
+  const handleReply = (message) => {
+    setReplyTo(message);
+    const el = document.querySelector(".message-input, textarea");
+    if (el) el.focus();
+  };
+
+  const handleDelete = async (message) => {
+    if (!activeConversation || !message?.id) return;
+    try {
+      await firebaseDeleteMessage(activeConversation, message.id);
+      setMessages((prev) => prev.filter((m) => m.id !== message.id));
+    } catch (e) {
+      console.error("delete failed", e);
+      alert("Failed to delete message");
+    }
+  };
+
+  if (!activeConversation)
+    return <div className="empty-state">Select a conversation</div>;
+
+  return (
+    <div className="admin-chat">
+      <div className="chat-stage">
+        <div className="adminchat-header">
+          {/* Presentational avatar to match Admin.css (no logic change) */}
+          <div
+            className="adminchat-header-avatar"
+            title={activeConversation || "Conversation"}
+          >
+            {activeConversation ? activeConversation.charAt(0).toUpperCase() : "?"}
+          </div>
+
+          <div className="adminchat-header-info">
+            <div className="adminchat-header-name">
+              Chat with <strong>{activeConversation}</strong>
+            </div>
+            <div className="adminchat-header-status">Admin: {agentId}</div>
+          </div>
+        </div>
+
+        <div className="adminchat-body" ref={bodyRef}>
+          {grouped.length === 0 ? (
+            <div className="no-msg">No messages yet</div>
+          ) : (
+            grouped.map((item) =>
+              item.type === "date" ? (
+                <DateSeparator key={item.key} label={formatDateHeader(item.ts)} />
+              ) : (
+                <ChatMessage
+                  key={item.msg.id}
+                  m={item.msg}
+                  isAdmin={item.msg.sender === agentId}
+                  onReply={handleReply}
+                  onDelete={handleDelete}
+                  onDownload={() =>
+                    item.msg.url && window.open(item.msg.url, "_blank")
+                  }
+                  repliedMessage={
+                    item.msg.replyTo ? messageById[item.msg.replyTo] : null
+                  }
+                />
+              )
+            )
+          )}
+
+          {Object.entries(uploads).map(([k, u]) => (
+            <div key={k} className="upload-bubble">
+              <div className="upload-name">{u.name}</div>
+              <div className="upload-bar">
+                <div
+                  className="upload-bar-fill"
+                  style={{ width: `${u.progress}%` }}
+                />
+              </div>
+            </div>
+          ))}
+
+          <div ref={scrollRef} />
+        </div>
+
+        <div className="adminchat-inputbar">
+          <Composer
+            onSendText={handleSendText}
+            onSendFile={handleSendFile}
+            replyTo={replyTo}
+            onCancelReply={() => setReplyTo(null)}
+            onTyping={() => {}}
+          />
+        </div>
+      </div>
+    </div>
+  );
 }
