@@ -1,4 +1,3 @@
-// src/admin/AdminChat.js
 import React, { useEffect, useRef, useState } from "react";
 import { ref, onValue, push, off } from "firebase/database";
 import { db } from "../firebase";
@@ -14,8 +13,8 @@ export default function AdminChat({ userId: propUserId }) {
   const [text, setText] = useState("");
   const [file, setFile] = useState(null);
   const bottomRef = useRef(null);
+  const bodyRef = useRef(null);
 
-  // --- Load messages (unchanged logic) ---
   useEffect(() => {
     if (!userId) return;
 
@@ -35,14 +34,14 @@ export default function AdminChat({ userId: propUserId }) {
       setMessages(msgArray);
 
       setTimeout(() => {
+        if (bodyRef.current) bodyRef.current.scrollTop = bodyRef.current.scrollHeight;
         bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-      }, 50);
+      }, 60);
     });
 
     return () => off(messagesRef);
   }, [userId]);
 
-  // --- SEND TEXT (unchanged logic) ---
   const sendMessage = async () => {
     if (!text.trim() || !userId) return;
 
@@ -58,7 +57,6 @@ export default function AdminChat({ userId: propUserId }) {
     setText("");
   };
 
-  // --- FILE UPLOAD (unchanged logic) ---
   const sendFile = async () => {
     if (!file || !userId) return;
 
@@ -95,9 +93,7 @@ export default function AdminChat({ userId: propUserId }) {
   };
 
   return (
-    <div className="adminchat-container">
-
-      {/* HEADER */}
+    <div className="adminchat-container" style={{ display: "flex", flexDirection: "column", height: "100%" }}>
       <div className="adminchat-header">
         <div className="adminchat-header-avatar">{userId?.charAt(0)}</div>
         <div className="adminchat-header-info">
@@ -106,23 +102,14 @@ export default function AdminChat({ userId: propUserId }) {
         </div>
       </div>
 
-      {/* BODY (messages) */}
-      <div className="adminchat-body">
+      <div className="adminchat-body" ref={bodyRef}>
         {messages.map((msg) => (
           <div
             key={msg.id}
-            className={
-              msg.sender === "admin"
-                ? "chat-bubble bubble-right"
-                : "chat-bubble bubble-left"
-            }
+            className={msg.sender === "admin" ? "chat-bubble bubble-right" : "chat-bubble bubble-left"}
           >
             {msg.type === "image" ? (
-              <img
-                src={msg.imageUrl}
-                alt="upload"
-                className="chat-image"
-              />
+              <img src={msg.imageUrl || msg.url} alt="upload" className="chat-image" onClick={() => (msg.imageUrl || msg.url) && window.open(msg.imageUrl || msg.url, "_blank")} />
             ) : (
               <div className="bubble-text">{msg.text}</div>
             )}
@@ -136,19 +123,13 @@ export default function AdminChat({ userId: propUserId }) {
           </div>
         ))}
 
-        <div ref={bottomRef}></div>
+        <div ref={bottomRef} />
       </div>
 
-      {/* INPUT BAR */}
       <div className="adminchat-inputbar">
-        <label className="file-btn">
+        <label className="file-btn" title="Attach file" style={{ cursor: "pointer" }}>
           📎
-          <input
-            id="adminFileInput"
-            type="file"
-            onChange={(e) => setFile(e.target.files[0])}
-            hidden
-          />
+          <input id="adminFileInput" type="file" onChange={(e) => setFile(e.target.files[0])} hidden />
         </label>
 
         <input
@@ -160,8 +141,20 @@ export default function AdminChat({ userId: propUserId }) {
           onKeyDown={(e) => e.key === "Enter" && sendMessage()}
         />
 
-        <button className="send-btn" onClick={sendMessage}>
-          ➤
+        <button className="send-btn" onClick={sendMessage}>➤</button>
+        <button
+          onClick={sendFile}
+          style={{
+            marginLeft: 8,
+            background: "transparent",
+            border: "1px solid rgba(255,255,255,0.03)",
+            color: "var(--text)",
+            padding: "8px 10px",
+            borderRadius: 10,
+            cursor: "pointer",
+          }}
+        >
+          Upload
         </button>
       </div>
     </div>
