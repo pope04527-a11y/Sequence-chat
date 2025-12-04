@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from "react";
-import "./AdminPanel.css";
+import "./Admin.css";
 
 /*
  Composer (with reply preview support)
