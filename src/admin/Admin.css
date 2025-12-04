@@ -1,5 +1,5 @@
 /* ==========================================================
-   Admin.css — Dark Modern Theme (comprehensive)
+   Admin.css — Dark Modern Theme (refined for screenshot match)
    Supports bubble-left/right, bubble-admin/user, row-admin/user
    ========================================================== */
 
@@ -9,10 +9,14 @@
   --panel: #0e1116;
   --muted: #8f98ad;
   --text: #e6e9ef;
-  --accent: #4c7cff;
-  --accent-600: #3a63d6;
+
+  /* Accent tuned to match screenshot purple */
+  --accent: #6b63ff;
+  --accent-600: #5348e6;
+
+  /* Outgoing / right bubble base (slightly different from accent) */
+  --outgoing: #7a6eff;
   --incoming: #222630;
-  --outgoing: #2f5ef0;
   --incoming-contrast: #dce6ff;
   --radius-lg: 16px;
   --radius-md: 12px;
@@ -25,7 +29,7 @@ body,html,#root{height:100%}
 body{
   margin:0;
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
-  background:var(--bg-0);
+  background: linear-gradient(90deg, rgba(107,99,255,0.06), var(--bg-0));
   color:var(--text);
   -webkit-font-smoothing:antialiased;
   -moz-osx-font-smoothing:grayscale;
@@ -43,11 +47,28 @@ body{
 
 /* ---------- Left Sidebar (conversations) ---------- */
 .admin-users{
-  width:320px;
+  width:360px; /* increased for visual parity with screenshot */
   background:linear-gradient(180deg, #0e1014, #0b0c10);
   border-right:1px solid rgba(255,255,255,0.03);
   padding:18px;
   overflow-y:auto;
+}
+
+/* scrollbar for left panel */
+.admin-users::-webkit-scrollbar,
+.adminchat-body::-webkit-scrollbar{
+  width:10px;
+  height:10px;
+}
+.admin-users::-webkit-scrollbar-thumb,
+.adminchat-body::-webkit-scrollbar-thumb{
+  background: rgba(255,255,255,0.04);
+  border-radius:999px;
+  border: 2px solid rgba(0,0,0,0);
+}
+.admin-users::-webkit-scrollbar-track,
+.adminchat-body::-webkit-scrollbar-track{
+  background: transparent;
 }
 
 .sidebar-header{
@@ -82,7 +103,7 @@ body{
 
 .user-list-item.active,
 .user-item.active{
-  background: linear-gradient(90deg, rgba(76,124,255,0.10), rgba(76,124,255,0.06));
+  background: linear-gradient(90deg, rgba(107,99,255,0.10), rgba(107,99,255,0.06));
   border-left:4px solid var(--accent);
   padding-left:10px;
 }
@@ -93,7 +114,21 @@ body{
   background:var(--accent);
   color:white; display:flex; align-items:center; justify-content:center;
   font-weight:700; font-size:16px; flex:0 0 44px;
-  box-shadow: 0 4px 18px rgba(76,124,255,0.08);
+  box-shadow: 0 6px 20px rgba(107,99,255,0.08);
+  position:relative;
+}
+
+/* online dot - use the class "online" on the avatar element to show */
+.user-avatar.online::after{
+  content: "";
+  position: absolute;
+  width:10px; height:10px;
+  border-radius:50%;
+  background: #3ee07a;
+  right: -2px;
+  bottom: -2px;
+  border: 2px solid var(--panel);
+  box-shadow: 0 0 0 4px rgba(107,99,255,0.04);
 }
 
 .user-meta{ min-width:0; overflow:hidden }
@@ -109,7 +144,7 @@ body{
   min-width:22px; height:22px;
   display:inline-flex; align-items:center; justify-content:center;
   border-radius:999px; font-size:12px; padding:0 6px;
-  box-shadow: 0 4px 12px rgba(76,124,255,0.12);
+  box-shadow: 0 6px 18px rgba(107,99,255,0.12);
 }
 
 /* ---------- Main chat area ---------- */
@@ -139,7 +174,7 @@ body{
 /* chat body */
 .adminchat-body{
   flex:1;
-  padding:28px 36px;
+  padding:40px 48px; /* increased padding for spacing like screenshot */
   overflow-y:auto;
   display:flex;
   flex-direction:column;
@@ -159,8 +194,8 @@ body{
 
 /* ---------- Message rows — left/right alignment ---------- */
 /* support row-admin/row-user and generic msg-row */
-.row-admin, .admin-row, .msg-row.admin { display:flex; justify-content:flex-end; margin-bottom:8px; }
-.row-user, .user-row, .msg-row.user { display:flex; justify-content:flex-start; margin-bottom:8px; }
+.row-admin, .admin-row, .msg-row.admin { display:flex; justify-content:flex-end; margin-bottom:12px; }
+.row-user, .user-row, .msg-row.user { display:flex; justify-content:flex-start; margin-bottom:12px; }
 
 /* wrapper for bubble + menu */
 .bubble-wrapper, .wa-msg-wrapper, .wa-msg{ display:flex; align-items:flex-end; gap:8px; max-width:100% }
@@ -171,9 +206,9 @@ body{
   display:inline-block;
   padding:12px 16px;
   border-radius: var(--radius-lg);
-  max-width:70%;
+  max-width:58%; /* slightly narrower to match screenshot */
   word-break:break-word;
-  box-shadow: 0 6px 20px rgba(2,6,23,0.5);
+  box-shadow: 0 8px 26px rgba(2,6,23,0.55);
   font-size:15px;
   line-height:1.4;
 }
@@ -185,11 +220,12 @@ body{
 .wa-bubble.user,
 .bubble-incoming,
 .wa-bubble.user {
-  background: linear-gradient(180deg, #10131a, #161923);
+  background: linear-gradient(180deg, #0f1317, #15161b);
   color:var(--text);
   border-top-left-radius:6px;
   border-top-right-radius: var(--radius-lg);
   align-self:flex-start;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.5);
 }
 
 /* outgoing / right (admin) */
@@ -198,12 +234,12 @@ body{
 .bubble-admin,
 .wa-bubble.admin,
 .bubble-outgoing {
-  background: linear-gradient(180deg, var(--outgoing), #3a63d6);
+  background: linear-gradient(180deg, var(--outgoing), var(--accent-600));
   color:white;
   border-top-right-radius:6px;
   border-top-left-radius: var(--radius-lg);
   align-self:flex-end;
-  box-shadow: 0 10px 30px rgba(49,86,255,0.14);
+  box-shadow: 0 14px 36px rgba(83,72,230,0.14);
 }
 
 /* text inside bubble */
@@ -231,7 +267,7 @@ body{
   border-radius:12px;
   display:block;
   margin-bottom:8px;
-  border: 3px solid rgba(76,124,255,0.12);
+  border: 3px solid rgba(107,99,255,0.12);
   cursor:pointer;
 }
 
@@ -254,12 +290,12 @@ body{
   gap:8px;
   justify-content:flex-end;
   align-items:center;
-  margin-top:6px;
+  margin-top:8px;
   font-size:12px;
   color:var(--muted);
 }
-.bubble-time, .wa-time { font-size:12px; color:var(--muted) }
-.bubble-ticks, .wa-ticks { color: rgba(255,255,255,0.9); font-size:13px }
+.bubble-time, .wa-time { font-size:12px; color:var(--muted); margin-left:6px }
+.bubble-ticks, .wa-ticks { color: rgba(255,255,255,0.95); font-size:13px }
 
 /* action menu wrapper */
 .bubble-menu, .wa-menu { margin-bottom:6px; align-self:flex-end }
@@ -286,8 +322,8 @@ body{
 }
 .message-input{
   flex:1;
-  padding:12px 14px;
-  border-radius:12px;
+  padding:14px 16px;
+  border-radius:20px;
   background: rgba(255,255,255,0.03);
   border:1px solid rgba(255,255,255,0.03);
   color:var(--text);
@@ -298,8 +334,9 @@ body{
 .file-btn{ color:var(--muted); font-size:20px; cursor:pointer }
 .send-btn{
   background:linear-gradient(180deg,var(--accent),var(--accent-600));
-  color:white; padding:10px 16px; border-radius:12px;
+  color:white; padding:10px 16px; border-radius:14px;
   border:none; cursor:pointer; font-weight:700;
+  box-shadow: 0 8px 20px rgba(107,99,255,0.12);
 }
 
 /* ---------- Empty / misc ---------- */
