@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useAdmin } from "./AdminContext";
 import ConversationListItem from "./ConversationListItem";
-import "./AdminChat.css";
+import "./Admin.css";
 import { ref as dbRef, onValue } from "firebase/database";
 import { db } from "../firebase";
 
