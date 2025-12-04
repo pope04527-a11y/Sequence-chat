@@ -59,12 +59,10 @@ export default function ConversationsPanel() {
     conversations && conversations.length > 0 ? conversations : fallbackList || [];
 
   return (
-    <div className="sidebar-container">
-      <div className="sidebar-header">
-        <h2>Conversations</h2>
-      </div>
+    <div className="admin-users">
+      <div className="users-header">Conversations</div>
 
-      <div className="sidebar-list">
+      <div className="users-list">
         {conversations && conversations.length === 0 && loadingFallback ? (
           <div className="sidebar-empty">Loading conversations…</div>
         ) : listToRender.length === 0 ? (
