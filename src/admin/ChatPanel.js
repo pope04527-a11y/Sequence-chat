@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import {
   subscribeToMessages,
   deleteMessage as firebaseDeleteMessage,
@@ -36,23 +36,71 @@ export default function ChatPanel() {
   const [messages, setMessages] = useState([]);
   const [replyTo, setReplyTo] = useState(null);
   const [uploads, setUploads] = useState({});
-  const scrollRef = useRef(null);
-  const bodyRef = useRef(null);
+  const [showJump, setShowJump] = useState(false);
 
+  const scrollRef = useRef(null); // sentinel at bottom for scrollIntoView
+  const bodyRef = useRef(null); // the scrolling container
+  const isAtBottomRef = useRef(true); // track whether user is at bottom
+
+  // helper to scroll to bottom
+  const scrollToBottom = useCallback((behavior = "smooth") => {
+    const el = bodyRef.current;
+    if (!el) return;
+    // set scrollTop first then ensure sentinel into view so it works across browsers
+    el.scrollTop = el.scrollHeight;
+    scrollRef.current?.scrollIntoView({ behavior });
+    isAtBottomRef.current = true;
+    setShowJump(false);
+  }, []);
+
+  // onScroll handler to track if user is near bottom
+  useEffect(() => {
+    const el = bodyRef.current;
+    if (!el) return;
+
+    const onScroll = () => {
+      const threshold = 120; // px from bottom to consider "at bottom"
+      const atBottom =
+        el.scrollHeight - el.scrollTop - el.clientHeight <= threshold;
+      isAtBottomRef.current = atBottom;
+      setShowJump(!atBottom);
+    };
+
+    el.addEventListener("scroll", onScroll, { passive: true });
+    // run once to initialize
+    onScroll();
+
+    return () => {
+      el.removeEventListener("scroll", onScroll);
+    };
+  }, []);
+
+  // subscribe to messages
   useEffect(() => {
     if (!activeConversation) {
       setMessages([]);
       setReplyTo(null);
       return;
     }
+
     const unsub = subscribeToMessages(activeConversation, (msgs) => {
+      // msgs is expected to be an array
       setMessages(msgs);
+
+      // After DOM updates, scroll only if user was at bottom
       setTimeout(() => {
-        // smooth but reliable scroll to bottom
-        if (bodyRef.current) bodyRef.current.scrollTop = bodyRef.current.scrollHeight;
-        scrollRef.current?.scrollIntoView({ behavior: "smooth" });
-      }, 80);
+        if (isAtBottomRef.current) {
+          // user is at bottom => auto-scroll
+          if (bodyRef.current) bodyRef.current.scrollTop = bodyRef.current.scrollHeight;
+          scrollRef.current?.scrollIntoView({ behavior: "smooth" });
+          setShowJump(false);
+        } else {
+          // user has scrolled up: don't auto-scroll; show jump button
+          setShowJump(true);
+        }
+      }, 60);
     });
+
     return () => unsub && unsub();
   }, [activeConversation]);
 
@@ -147,7 +195,7 @@ export default function ChatPanel() {
 
   return (
     <div className="admin-chat">
-      <div className="chat-stage">
+      <div className="chat-stage" style={{ position: "relative" }}>
         <div className="adminchat-header">
           {/* Presentational avatar to match Admin.css (no logic change) */}
           <div
@@ -208,6 +256,29 @@ export default function ChatPanel() {
             <div ref={scrollRef} />
           </div>
         </div>
+
+        {/* Jump to latest button */}
+        {showJump && (
+          <button
+            onClick={() => scrollToBottom("smooth")}
+            aria-label="Jump to latest"
+            style={{
+              position: "absolute",
+              right: 20,
+              bottom: 84, // above the composer
+              zIndex: 60,
+              background: "linear-gradient(180deg,#6b63ff,#5348e6)",
+              color: "#fff",
+              border: "none",
+              padding: "8px 12px",
+              borderRadius: 12,
+              boxShadow: "0 8px 20px rgba(83,72,230,0.12)",
+              cursor: "pointer",
+            }}
+          >
+            Jump to latest
+          </button>
+        )}
 
         <div className="adminchat-inputbar">
           <Composer
