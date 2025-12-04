@@ -148,6 +148,14 @@ export default function ChatPanel() {
   return (
     <div className="admin-chat">
       <div className="adminchat-header">
+        {/* Presentational avatar to match Admin.css (no logic change) */}
+        <div
+          className="adminchat-header-avatar"
+          title={activeConversation || "Conversation"}
+        >
+          {activeConversation ? activeConversation.charAt(0).toUpperCase() : "?"}
+        </div>
+
         <div className="adminchat-header-info">
           <div className="adminchat-header-name">
             Chat with <strong>{activeConversation}</strong>
