@@ -1,5 +1,5 @@
 import React from "react";
-import "./AdminPanel.css";
+import "./Admin.css";
 
 /*
  DateSeparator
