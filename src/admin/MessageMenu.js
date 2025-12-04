@@ -27,12 +27,15 @@ export default function MessageMenu({ onReply, onDelete, onDownload }) {
           e.stopPropagation();
           setOpen((v) => !v);
         }}
+        className="menu-btn"
         style={{
           background: "transparent",
           border: "none",
           cursor: "pointer",
           padding: 6,
           borderRadius: 6,
+          color: "var(--muted)",
+          fontSize: 16,
         }}
         aria-label="Message menu"
         title="Message actions"
@@ -42,12 +45,14 @@ export default function MessageMenu({ onReply, onDelete, onDownload }) {
 
       {open && (
         <div
+          className="menu-dropdown"
           style={{
             position: "absolute",
             right: 0,
             top: 28,
-            background: "white",
-            boxShadow: "0 8px 24px rgba(0,0,0,0.08)",
+            background: "rgba(255,255,255,0.03)",
+            color: "var(--text)",
+            boxShadow: "0 8px 24px rgba(0,0,0,0.6)",
             borderRadius: 8,
             minWidth: 160,
             zIndex: 50,
@@ -57,24 +62,53 @@ export default function MessageMenu({ onReply, onDelete, onDownload }) {
           onClick={(e) => e.stopPropagation()}
         >
           <button
-            style={{ display: "block", width: "100%", padding: "8px 10px", textAlign: "left", background: "transparent", border: "none", cursor: "pointer" }}
+            className="menu-item"
+            style={{
+              display: "block",
+              width: "100%",
+              padding: "8px 10px",
+              textAlign: "left",
+              background: "transparent",
+              border: "none",
+              cursor: "pointer",
+              color: "var(--text)",
+            }}
             onClick={() => { setOpen(false); onReply && onReply(); }}
           >
             Reply
           </button>
 
           <button
-            style={{ display: "block", width: "100%", padding: "8px 10px", textAlign: "left", background: "transparent", border: "none", cursor: "pointer" }}
+            className="menu-item"
+            style={{
+              display: "block",
+              width: "100%",
+              padding: "8px 10px",
+              textAlign: "left",
+              background: "transparent",
+              border: "none",
+              cursor: "pointer",
+              color: "var(--text)",
+            }}
             onClick={() => { setOpen(false); onDownload && onDownload(); }}
           >
             Download
           </button>
 
           <button
-            style={{ display: "block", width: "100%", padding: "8px 10px", textAlign: "left", color: "#b03030", background: "transparent", border: "none", cursor: "pointer" }}
+            className="menu-item danger"
+            style={{
+              display: "block",
+              width: "100%",
+              padding: "8px 10px",
+              textAlign: "left",
+              color: "#ff7b93",
+              background: "transparent",
+              border: "none",
+              cursor: "pointer",
+            }}
             onClick={() => {
               setOpen(false);
-              // use window.confirm (ESLint allows window.confirm; unscoped confirm is restricted)
               if (window.confirm("Delete this message?")) {
                 onDelete && onDelete();
               }
