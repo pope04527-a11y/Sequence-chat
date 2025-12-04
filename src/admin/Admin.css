@@ -10,11 +10,9 @@
   --muted: #8f98ad;
   --text: #e6e9ef;
 
-  /* Accent tuned to match screenshot purple */
   --accent: #6b63ff;
   --accent-600: #5348e6;
 
-  /* Outgoing / right bubble base (slightly different from accent) */
   --outgoing: #7a6eff;
   --incoming: #222630;
   --incoming-contrast: #dce6ff;
@@ -40,23 +38,23 @@ body{
   display:flex;
   height:100vh;
   width:100%;
-  overflow:hidden;
+  overflow:hidden; /* keep page-level scrolling inside the panels */
   gap:0;
   background: linear-gradient(180deg, rgba(12,14,20,0.9), rgba(10,11,15,0.98));
 }
 
-/* admin-main is the main content column (chat). ensure it can shrink/grow properly */
+/* main column (chat) */
 .admin-main {
   display: flex;
   flex-direction: column;
   flex: 1;
-  min-width: 0; /* important so flex children can overflow/scroll correctly */
+  min-width: 0; /* critical so flex children may overflow */
   height: 100vh;
 }
 
-/* chat-stage centers the chat content and restricts max width like screenshot */
+/* centers the chat column */
 .chat-stage {
-  width: 820px; /* approximate centered chat column width from screenshot */
+  width: 860px; /* wider to match screenshot */
   max-width: calc(100% - 80px);
   margin: 0 auto;
   display: flex;
@@ -67,14 +65,15 @@ body{
 
 /* ---------- Left Sidebar (conversations) ---------- */
 .admin-users{
-  width:360px; /* increased for visual parity with screenshot */
+  width:360px;
   background:linear-gradient(180deg, #0e1014, #0b0c10);
   border-right:1px solid rgba(255,255,255,0.03);
   padding:18px;
   overflow-y:auto;
+  -webkit-overflow-scrolling: touch;
 }
 
-/* scrollbar for left panel and chat body */
+/* ---------- Scrollbar ---------- */
 .admin-users::-webkit-scrollbar,
 .adminchat-body::-webkit-scrollbar{
   width:10px;
@@ -104,7 +103,7 @@ body{
   font-weight:700;
 }
 
-/* Conversation list items (ConversationListItem or simple user-item) */
+/* Conversation list items */
 .user-list-item,
 .user-item{
   display:flex;
@@ -117,55 +116,18 @@ body{
   transition: all 0.12s ease;
   cursor:pointer;
 }
-
-.user-list-item:hover,
 .user-item:hover{ background:rgba(255,255,255,0.02); transform:translateY(-1px) }
-
-.user-list-item.active,
-.user-item.active{
-  background: linear-gradient(90deg, rgba(107,99,255,0.10), rgba(107,99,255,0.06));
-  border-left:4px solid var(--accent);
-  padding-left:10px;
-}
+.user-item.active { background: linear-gradient(90deg, rgba(107,99,255,0.10), rgba(107,99,255,0.06)); border-left:4px solid var(--accent); padding-left:10px; }
 
 .user-left{ display:flex; align-items:center; gap:12px; min-width:0; flex:1 }
-.user-avatar{
-  width:44px; height:44px; border-radius:50%;
-  background:var(--accent);
-  color:white; display:flex; align-items:center; justify-content:center;
-  font-weight:700; font-size:16px; flex:0 0 44px;
-  box-shadow: 0 6px 20px rgba(107,99,255,0.08);
-  position:relative;
-}
-
-/* online dot - use the class "online" on the avatar element to show */
-.user-avatar.online::after{
-  content: "";
-  position: absolute;
-  width:10px; height:10px;
-  border-radius:50%;
-  background: #3ee07a;
-  right: -2px;
-  bottom: -2px;
-  border: 2px solid var(--panel);
-  box-shadow: 0 0 0 4px rgba(107,99,255,0.04);
-}
-
+.user-avatar{ width:44px; height:44px; border-radius:50%; background:var(--accent); color:white; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:16px; flex:0 0 44px; box-shadow: 0 6px 20px rgba(107,99,255,0.08); position:relative; }
+.user-avatar.online::after{ content: ""; position: absolute; width:10px; height:10px; border-radius:50%; background: #3ee07a; right: -2px; bottom: -2px; border: 2px solid var(--panel); box-shadow: 0 0 0 4px rgba(107,99,255,0.04); }
 .user-meta{ min-width:0; overflow:hidden }
 .user-id{ font-weight:700; font-size:14px; color:var(--text); white-space:nowrap; text-overflow:ellipsis; overflow:hidden }
 .last-msg{ font-size:13px; color:var(--muted); margin-top:6px; white-space:nowrap; text-overflow:ellipsis; overflow:hidden; }
-
-/* right area of list item */
 .user-right{ display:flex; align-items:flex-start; flex-direction:column; gap:6px; justify-content:center; flex:0 0 auto }
 .time{ font-size:12px; color:var(--muted) }
-.badge{
-  background:var(--accent);
-  color:white;
-  min-width:22px; height:22px;
-  display:inline-flex; align-items:center; justify-content:center;
-  border-radius:999px; font-size:12px; padding:0 6px;
-  box-shadow: 0 6px 18px rgba(107,99,255,0.12);
-}
+.badge{ background:var(--accent); color:white; min-width:22px; height:22px; display:inline-flex; align-items:center; justify-content:center; border-radius:999px; font-size:12px; padding:0 6px; box-shadow: 0 6px 18px rgba(107,99,255,0.12); }
 
 /* ---------- Main chat area ---------- */
 .admin-chat{
@@ -191,16 +153,17 @@ body{
 .adminchat-header-name{ font-size:16px; font-weight:700; color:var(--text) }
 .adminchat-header-status{ font-size:13px; color:var(--muted) }
 
-/* chat body - act as the true scroll container */
+/* chat body - true scroll container */
 .adminchat-body{
-  flex:1;           /* allows it to grow and shrink inside .chat-stage */
-  min-height:0;     /* critical for flexbox overflow to work */
-  padding:18px 0;   /* vertical padding; horizontal centering handled by messages-inner */
+  flex:1;
+  min-height:0; /* critical */
+  padding:18px 0;   /* top/bottom breathing room */
   overflow-y:auto;
+  -webkit-overflow-scrolling: touch;
   display:flex;
   flex-direction:column;
   gap:8px;
-  align-items: stretch; /* stretch children; messages-inner centers the column */
+  align-items: stretch; /* stretch children: messages-inner will center */
   scroll-behavior: smooth;
   overscroll-behavior: contain;
 }
@@ -208,26 +171,31 @@ body{
 /* inner messages column — constrained & centered inside chat-stage */
 .messages-inner {
   width:100%;
-  max-width:720px; /* width that holds bubbles (keeps them narrower) */
+  max-width:720px;
   margin: 0 auto;
   display:flex;
   flex-direction:column;
   gap:12px;
-  padding: 8px 20px 24px 20px; /* inner padding so first message isn't clipped */
+  padding: 8px 20px 24px 20px;
   min-height: 0;
   box-sizing: border-box;
 }
 
-/* When messages are centered, the bubble-wrapper should respect the messages-inner width */
+/* bubble wrapper — we don't set default justify; row classes will align */
 .bubble-wrapper {
   display:flex;
   align-items:flex-end;
-  gap:8px;
+  gap:12px;
   max-width:100%;
-  overflow: visible; /* allow menus / avatars to overflow */
+  overflow: visible;
   width: 100%;
-  justify-content: flex-start;
 }
+
+/* align bubbles by row:
+   row-user -> left; row-admin -> right.
+   these rules rely on ChatMessage wrapping bubble-wrapper inside a row-... parent. */
+.row-user .bubble-wrapper { justify-content: flex-start; }
+.row-admin .bubble-wrapper { justify-content: flex-end; }
 
 /* date separator */
 .date-sep{
@@ -240,18 +208,16 @@ body{
   margin:18px 0;
 }
 
-/* ---------- Message rows — left/right alignment ---------- */
-/* support row-admin/row-user and generic msg-row */
+/* rows */
 .row-admin, .admin-row, .msg-row.admin { display:flex; justify-content:flex-end; margin-bottom:12px; width:100%; }
 .row-user, .user-row, .msg-row.user { display:flex; justify-content:flex-start; margin-bottom:12px; width:100%; }
 
-/* ---------- Bubbles — multiple names supported ---------- */
-/* generic chat-bubble used by AdminChat older component */
+/* bubbles */
 .chat-bubble, .bubble-user, .bubble-admin, .bubble-left, .bubble-right, .wa-bubble {
   display:inline-block;
   padding:12px 16px;
   border-radius: var(--radius-lg);
-  max-width:100%; /* fill available column width inside messages-inner */
+  max-width: 72%; /* limit bubble width to 72% of messages-inner */
   word-break:break-word;
   box-shadow: 0 8px 26px rgba(2,6,23,0.55);
   font-size:15px;
@@ -307,7 +273,7 @@ body{
 .reply-name, .wa-reply-name { font-weight:700; font-size:13px; color:var(--text); margin-bottom:4px }
 .reply-snippet, .wa-reply-snippet { font-size:13px; color:var(--muted) }
 
-/* image in bubble */
+/* images/files */
 .bubble-img, .chat-image, .wa-img {
   width:100%;
   max-width:600px;
@@ -317,8 +283,6 @@ body{
   border: 3px solid rgba(107,99,255,0.12);
   cursor:pointer;
 }
-
-/* file bubble */
 .bubble-file, .wa-file {
   background: rgba(255,255,255,0.02);
   padding:10px;
@@ -331,7 +295,7 @@ body{
 .file-icon{ font-size:20px }
 .file-name{ font-weight:700 }
 
-/* bubble footer (time + ticks) */
+/* bubble footer */
 .bubble-footer, .wa-footer {
   display:flex;
   gap:8px;
@@ -344,30 +308,22 @@ body{
 .bubble-time, .wa-time { font-size:12px; color:var(--muted); margin-left:6px }
 .bubble-ticks, .wa-ticks { color: rgba(255,255,255,0.95); font-size:13px }
 
-/* action menu wrapper - position relative and high z-index so dropdowns are visible */
+/* action menu wrapper */
 .bubble-menu {
   margin-bottom:6px;
   align-self:flex-end;
   position: relative;
   z-index: 30;
 }
-.menu-dropdown { z-index: 60; } /* used by MessageMenu inline dropdown */
+.menu-dropdown { z-index: 60; }
 
-/* ---------- Uploads (progress) ---------- */
-.upload-bubble {
-  align-self:flex-end;
-  background:linear-gradient(180deg, #111318, #14161b);
-  padding:12px;
-  border-radius:12px;
-  width:280px;
-  margin-top:8px;
-}
+/* uploads/progress */
+.upload-bubble { align-self:flex-end; background:linear-gradient(180deg, #111318, #14161b); padding:12px; border-radius:12px; width:280px; margin-top:8px; }
 .upload-name{ font-weight:700; color:var(--text) }
 .upload-bar{ height:8px; background:rgba(255,255,255,0.04); border-radius:8px; margin-top:8px; overflow:hidden }
 .upload-bar-fill{ height:100%; background:var(--accent); border-radius:8px }
 
-/* ---------- Composer / Input Bar ---------- */
-/* We keep the input styling but ensure it's used inside .chat-stage so it's centered */
+/* composer/input */
 .adminchat-inputbar{
   padding:12px 18px;
   border-top:1px solid rgba(255,255,255,0.02);
@@ -395,11 +351,11 @@ body{
   box-shadow: 0 8px 20px rgba(107,99,255,0.12);
 }
 
-/* ---------- Empty / misc ---------- */
+/* misc */
 .empty-state{ display:flex; align-items:center; justify-content:center; color:var(--muted); font-size:18px; height:100% }
 .no-msg{ color:var(--muted); padding:8px 12px }
 
-/* ---------- Responsive ---------- */
+/* responsive */
 @media (max-width:900px){
   .admin-users{ width:260px }
   .chat-stage{ width: 100%; max-width: calc(100% - 32px); padding: 0 16px }
