@@ -74,7 +74,7 @@ body{
   overflow-y:auto;
 }
 
-/* scrollbar for left panel */
+/* scrollbar for left panel and chat body */
 .admin-users::-webkit-scrollbar,
 .adminchat-body::-webkit-scrollbar{
   width:10px;
@@ -191,19 +191,34 @@ body{
 .adminchat-header-name{ font-size:16px; font-weight:700; color:var(--text) }
 .adminchat-header-status{ font-size:13px; color:var(--muted) }
 
-/* chat body - must be a flexible scrollable child inside the chat-stage */
+/* chat body - act as the true scroll container */
 .adminchat-body{
   flex:1;           /* allows it to grow and shrink inside .chat-stage */
   min-height:0;     /* critical for flexbox overflow to work */
-  padding:40px 0;   /* vertical padding preserved; horizontal centering handled by chat-stage */
+  padding:18px 0;   /* vertical padding; horizontal centering handled by messages-inner */
   overflow-y:auto;
   display:flex;
   flex-direction:column;
   gap:8px;
-  align-items: center; /* center bubbles within the constrained column */
+  align-items: stretch; /* stretch children; messages-inner centers the column */
+  scroll-behavior: smooth;
+  overscroll-behavior: contain;
 }
 
-/* When messages are centered, the bubble-wrapper should be limited to chat column width */
+/* inner messages column — constrained & centered inside chat-stage */
+.messages-inner {
+  width:100%;
+  max-width:720px; /* width that holds bubbles (keeps them narrower) */
+  margin: 0 auto;
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+  padding: 8px 20px 24px 20px; /* inner padding so first message isn't clipped */
+  min-height: 0;
+  box-sizing: border-box;
+}
+
+/* When messages are centered, the bubble-wrapper should respect the messages-inner width */
 .bubble-wrapper {
   display:flex;
   align-items:flex-end;
@@ -236,7 +251,7 @@ body{
   display:inline-block;
   padding:12px 16px;
   border-radius: var(--radius-lg);
-  max-width:720px; /* ensure bubble fits within centered column */
+  max-width:100%; /* fill available column width inside messages-inner */
   word-break:break-word;
   box-shadow: 0 8px 26px rgba(2,6,23,0.55);
   font-size:15px;
@@ -294,8 +309,8 @@ body{
 
 /* image in bubble */
 .bubble-img, .chat-image, .wa-img {
-  width:300px;
-  max-width:100%;
+  width:100%;
+  max-width:600px;
   border-radius:12px;
   display:block;
   margin-bottom:8px;
@@ -389,5 +404,6 @@ body{
   .admin-users{ width:260px }
   .chat-stage{ width: 100%; max-width: calc(100% - 32px); padding: 0 16px }
   .adminchat-body{ padding:18px 0 }
+  .messages-inner{ padding: 8px 12px 24px 12px }
   .bubble-img{ width:220px }
 }
