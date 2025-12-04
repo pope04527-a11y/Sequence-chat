@@ -1,5 +1,5 @@
 import React from "react";
-import "./AdminPanel.css";
+import "./Admin.css";
 import Avatar from "./Avatar";
 import { useNavigate } from "react-router-dom";
 import { useAdmin } from "./AdminContext";
