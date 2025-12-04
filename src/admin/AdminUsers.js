@@ -62,42 +62,52 @@ export default function AdminUsers() {
   }, []);
 
   const openChat = (userId) => {
-    navigate(`/admin/chat/${userId}`);
+    navigate(`/admin/chat/${encodeURIComponent(userId)}`);
   };
 
+  if (users.length === 0) {
+    return (
+      <div className="admin-users" style={{ padding: 12 }}>
+        <h2 className="admin-title">Messages by Users</h2>
+        <div className="no-msg">No users found.</div>
+      </div>
+    );
+  }
+
   return (
-    <div className="admin-container">
-      <h1 className="admin-title">Messages by Users</h1>
+    <div className="admin-users" style={{ padding: 12 }}>
+      <h2 className="admin-title">Messages by Users</h2>
 
-      {users.length === 0 ? (
-        <p>No users found.</p>
-      ) : (
-        <table className="admin-table">
-          <thead>
-            <tr>
-              <th>User ID</th>
-              <th>Last Message</th>
-              <th>Sender</th>
-              <th>Time</th>
-            </tr>
-          </thead>
+      <div className="users-list" style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        {users.map((user) => (
+          <div
+            key={user.id}
+            className="user-item"
+            onClick={() => openChat(user.id)}
+            style={{ cursor: "pointer" }}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => e.key === "Enter" && openChat(user.id)}
+          >
+            <div className="user-left">
+              <div className="user-avatar" title={user.id}>
+                <div className="avatar" style={{ background: "#6cc9f8", color: "#000", width: 44, height: 44, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "50%", fontWeight: 700 }}>
+                  {user.id?.charAt(0)?.toUpperCase() || "U"}
+                </div>
+              </div>
 
-          <tbody>
-            {users.map((user) => (
-              <tr
-                key={user.id}
-                onClick={() => openChat(user.id)}
-                style={{ cursor: "pointer" }}
-              >
-                <td>{user.id}</td>
-                <td>{user.lastMessage}</td>
-                <td>{user.lastSender}</td>
-                <td>{user.lastTimeLabel}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
+              <div className="user-meta">
+                <div className="user-id">{user.id}</div>
+                <div className="last-msg">{user.lastMessage}</div>
+              </div>
+            </div>
+
+            <div className="user-right">
+              <div className="time">{user.lastTimeLabel}</div>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
