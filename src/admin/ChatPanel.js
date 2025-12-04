@@ -5,7 +5,7 @@ import {
 } from "../firebase";
 import { useAdmin } from "./AdminContext";
 import Composer from "./Composer";
-import "./AdminChat.css";
+import "./Admin.css";
 import ChatMessage from "./ChatMessage";
 import DateSeparator from "./DateSeparator";
 
