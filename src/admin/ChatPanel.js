@@ -147,71 +147,77 @@ export default function ChatPanel() {
 
   return (
     <div className="admin-chat">
-      <div className="adminchat-header">
-        {/* Presentational avatar to match Admin.css (no logic change) */}
-        <div
-          className="adminchat-header-avatar"
-          title={activeConversation || "Conversation"}
-        >
-          {activeConversation ? activeConversation.charAt(0).toUpperCase() : "?"}
-        </div>
-
-        <div className="adminchat-header-info">
-          <div className="adminchat-header-name">
-            Chat with <strong>{activeConversation}</strong>
+      <div className="chat-stage">
+        <div className="adminchat-header">
+          {/* Presentational avatar to match Admin.css (no logic change) */}
+          <div
+            className="adminchat-header-avatar"
+            title={activeConversation || "Conversation"}
+          >
+            {activeConversation ? activeConversation.charAt(0).toUpperCase() : "?"}
           </div>
-          <div className="adminchat-header-status">Admin: {agentId}</div>
-        </div>
-      </div>
 
-      <div className="adminchat-body" ref={bodyRef}>
-        {grouped.length === 0 ? (
-          <div className="no-msg">No messages yet</div>
-        ) : (
-          grouped.map((item) =>
-            item.type === "date" ? (
-              <DateSeparator key={item.key} label={formatDateHeader(item.ts)} />
-            ) : (
-              <ChatMessage
-                key={item.msg.id}
-                m={item.msg}
-                isAdmin={item.msg.sender === agentId}
-                onReply={handleReply}
-                onDelete={handleDelete}
-                onDownload={() =>
-                  item.msg.url && window.open(item.msg.url, "_blank")
-                }
-                repliedMessage={
-                  item.msg.replyTo ? messageById[item.msg.replyTo] : null
-                }
-              />
-            )
-          )
-        )}
-
-        {Object.entries(uploads).map(([k, u]) => (
-          <div key={k} className="upload-bubble">
-            <div className="upload-name">{u.name}</div>
-            <div className="upload-bar">
-              <div
-                className="upload-bar-fill"
-                style={{ width: `${u.progress}%` }}
-              />
+          <div className="adminchat-header-info">
+            <div className="adminchat-header-name">
+              Chat with <strong>{activeConversation}</strong>
             </div>
+            <div className="adminchat-header-status">Admin: {agentId}</div>
           </div>
-        ))}
+        </div>
 
-        <div ref={scrollRef} />
-      </div>
+        <div className="adminchat-body" ref={bodyRef}>
+          {/* messages-inner is a constrained column centered in chat-stage.
+              adminchat-body is the scroll container (so scrolling is stable). */}
+          <div className="messages-inner">
+            {grouped.length === 0 ? (
+              <div className="no-msg">No messages yet</div>
+            ) : (
+              grouped.map((item) =>
+                item.type === "date" ? (
+                  <DateSeparator key={item.key} label={formatDateHeader(item.ts)} />
+                ) : (
+                  <ChatMessage
+                    key={item.msg.id}
+                    m={item.msg}
+                    isAdmin={item.msg.sender === agentId}
+                    onReply={handleReply}
+                    onDelete={handleDelete}
+                    onDownload={() =>
+                      item.msg.url && window.open(item.msg.url, "_blank")
+                    }
+                    repliedMessage={
+                      item.msg.replyTo ? messageById[item.msg.replyTo] : null
+                    }
+                  />
+                )
+              )
+            )}
 
-      <div className="adminchat-inputbar">
-        <Composer
-          onSendText={handleSendText}
-          onSendFile={handleSendFile}
-          replyTo={replyTo}
-          onCancelReply={() => setReplyTo(null)}
-          onTyping={() => {}}
-        />
+            {Object.entries(uploads).map(([k, u]) => (
+              <div key={k} className="upload-bubble">
+                <div className="upload-name">{u.name}</div>
+                <div className="upload-bar">
+                  <div
+                    className="upload-bar-fill"
+                    style={{ width: `${u.progress}%` }}
+                  />
+                </div>
+              </div>
+            ))}
+
+            <div ref={scrollRef} />
+          </div>
+        </div>
+
+        <div className="adminchat-inputbar">
+          <Composer
+            onSendText={handleSendText}
+            onSendFile={handleSendFile}
+            replyTo={replyTo}
+            onCancelReply={() => setReplyTo(null)}
+            onTyping={() => {}}
+          />
+        </div>
       </div>
     </div>
   );
