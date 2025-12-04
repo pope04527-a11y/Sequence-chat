@@ -1,0 +1,260 @@
+/* =====================================================
+   GLOBAL RESET + BASE
+===================================================== */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: "Inter", sans-serif;
+}
+
+body {
+  background: #1b1f38;
+  overflow: hidden;
+}
+
+/* MAIN LAYOUT */
+.admin-container {
+  display: flex;
+  height: 100vh;
+  background: #1b1f38;
+  color: #e8e8e8;
+}
+
+/* =====================================================
+   LEFT SIDEBAR — USER LIST PANEL
+===================================================== */
+.admin-users {
+  width: 360px;
+  background: #15182e;
+  border-right: 1px solid #232642;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.admin-title {
+  padding: 24px;
+  font-size: 22px;
+  font-weight: 700;
+  color: #ffffff;
+  border-bottom: 1px solid #232642;
+}
+
+/* User Item */
+.user-item {
+  padding: 18px 22px;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.user-item:hover {
+  background: rgba(255,255,255,0.06);
+}
+
+.user-item.active {
+  background: #2d3bda;
+}
+
+/* User name */
+.user-item strong {
+  display: block;
+  font-size: 16px;
+  margin-bottom: 5px;
+}
+
+/* Last message */
+.last-msg {
+  font-size: 14px;
+  opacity: 0.6;
+}
+
+/* =====================================================
+   RIGHT SIDE — CHAT AREA
+===================================================== */
+.admin-chat {
+  flex: 1;
+  display: flex;
+  background: #101325;
+  border-left: 1px solid #232642;
+}
+
+/* EMPTY STATE */
+.empty-state {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  color: #6a6f90;
+  font-size: 20px;
+}
+
+/* =====================================================
+   CHAT WINDOW CONTAINER
+===================================================== */
+.adminchat-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+}
+
+/* =====================================================
+   CHAT HEADER — LIKE SCREENSHOT
+===================================================== */
+.adminchat-header {
+  height: 72px;
+  background: #1c2247;
+  display: flex;
+  align-items: center;
+  padding: 0 22px;
+  gap: 14px;
+  border-bottom: 1px solid #232642;
+}
+
+.adminchat-header-avatar {
+  width: 42px;
+  height: 42px;
+  background: #5865f2;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  text-transform: uppercase;
+  color: white;
+  font-size: 18px;
+}
+
+.adminchat-header-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.adminchat-header-name {
+  font-size: 17px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.adminchat-header-status {
+  font-size: 13px;
+  color: #b8c0ff;
+}
+
+/* =====================================================
+   CHAT BODY – DARK MODERN LOOK
+===================================================== */
+.adminchat-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px 24px;
+  background: #0d1021;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.adminchat-body::-webkit-scrollbar {
+  width: 0;
+}
+
+/* =====================================================
+   CHAT BUBBLES — EXACT LIKE SCREENSHOT
+===================================================== */
+.chat-bubble {
+  max-width: 65%;
+  padding: 14px 18px;
+  border-radius: 16px;
+  font-size: 15px;
+  line-height: 1.45;
+  position: relative;
+}
+
+/* User side (left) */
+.bubble-left {
+  background: #1c2247;
+  color: #e4e6f0;
+  align-self: flex-start;
+  border-top-left-radius: 4px;
+}
+
+/* Admin side (right) */
+.bubble-right {
+  background: #5865f2;
+  color: white;
+  align-self: flex-end;
+  border-top-right-radius: 4px;
+}
+
+/* Time text */
+.bubble-time {
+  font-size: 11px;
+  opacity: 0.7;
+  margin-top: 6px;
+  text-align: right;
+}
+
+/* =====================================================
+   IMAGE MESSAGE
+===================================================== */
+.chat-image {
+  width: 260px;
+  border-radius: 14px;
+  margin-bottom: 8px;
+  display: block;
+}
+
+/* =====================================================
+   INPUT BAR — LIKE SCREENSHOT
+===================================================== */
+.adminchat-inputbar {
+  height: 72px;
+  background: #1a1f3c;
+  display: flex;
+  align-items: center;
+  padding: 12px 18px;
+  gap: 14px;
+  border-top: 1px solid #232642;
+}
+
+/* File icon */
+.file-btn {
+  font-size: 22px;
+  cursor: pointer;
+  color: #8f95c6;
+}
+
+/* Text Input */
+.message-input {
+  flex: 1;
+  height: 48px;
+  border-radius: 28px;
+  border: none;
+  padding: 0 20px;
+  background: #0f1330;
+  color: white;
+  font-size: 15px;
+  outline: none;
+}
+
+/* Send Button */
+.send-btn {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #5865f2;
+  color: white;
+  border: none;
+  cursor: pointer;
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: 0.2s;
+}
+
+.send-btn:hover {
+  background: #4753d6;
+}
