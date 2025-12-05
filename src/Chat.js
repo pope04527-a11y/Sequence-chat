@@ -6,8 +6,7 @@ import { ref, push, onValue, update } from "firebase/database";
 import { supabase } from "./supabaseClient";
 import { useLocation, useNavigate } from "react-router-dom";
 
-// ❗ We no longer rely on URL ?user=
-// Only used as fallback
+// ❗ Fallback only, rarely used
 function getUserIdFromURL() {
   const params = new URLSearchParams(window.location.search);
   return params.get("user") || null;
@@ -17,14 +16,14 @@ function Chat() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // 🔥 NEW USER ID LOGIC
+  // 🔥 FIXED USERNAME HANDLING
   const userId =
     location.state?.username ||
     localStorage.getItem("chat-username") ||
     getUserIdFromURL() ||
     "unknown-user";
 
-  // 🔥 Save username so it persists across navigation
+  // 🔥 Save received username
   useEffect(() => {
     if (location.state?.username) {
       localStorage.setItem("chat-username", location.state.username);
@@ -137,11 +136,13 @@ function Chat() {
   return (
     <div className="chat-container">
       <div className="chat-header">
-        {/* 🔥 BACK BUTTON — now keeps username */}
+        {/* 🔥 FIXED — Back now returns username correctly */}
         <button
           className="back-btn"
           onClick={() =>
-            navigate("/", { state: { username: userId } })
+            navigate("/", {
+              state: { username: userId },
+            })
           }
         >
           ←
