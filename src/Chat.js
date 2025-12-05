@@ -1,16 +1,36 @@
+// src/Chat.js
 import React, { useState, useEffect, useRef } from "react";
 import "./Chat.css";
 import { db } from "./firebase";
 import { ref, push, onValue, update } from "firebase/database";
 import { supabase } from "./supabaseClient";
+import { useLocation, useNavigate } from "react-router-dom";
 
-function getUserId() {
+// ❗ We no longer rely on URL ?user=
+// Only used as fallback
+function getUserIdFromURL() {
   const params = new URLSearchParams(window.location.search);
-  return params.get("user") || "unknown-user";
+  return params.get("user") || null;
 }
 
 function Chat() {
-  const userId = getUserId();
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  // 🔥 NEW USER ID LOGIC
+  const userId =
+    location.state?.username ||
+    localStorage.getItem("chat-username") ||
+    getUserIdFromURL() ||
+    "unknown-user";
+
+  // 🔥 Save username so it persists across navigation
+  useEffect(() => {
+    if (location.state?.username) {
+      localStorage.setItem("chat-username", location.state.username);
+    }
+  }, [location.state]);
+
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState("");
   const [uploading, setUploading] = useState(null);
@@ -117,11 +137,12 @@ function Chat() {
   return (
     <div className="chat-container">
       <div className="chat-header">
-        
-        {/* 🔥 BACK BUTTON NOW CLICKABLE */}
+        {/* 🔥 BACK BUTTON — now keeps username */}
         <button
           className="back-btn"
-          onClick={() => (window.location.href = "/")}
+          onClick={() =>
+            navigate("/", { state: { username: userId } })
+          }
         >
           ←
         </button>
