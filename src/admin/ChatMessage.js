@@ -18,15 +18,18 @@ export default function ChatMessage({
       })
     : "";
 
-  // use both row and bubble naming so CSS covers all
+  // row alignment classes (left for user, right for admin)
   const rowClass = isAdmin ? "row-admin" : "row-user";
-  // use chat-bubble + directional classes so visuals match Admin.css
-  const bubbleClass = isAdmin ? "chat-bubble bubble-right" : "chat-bubble bubble-left";
+
+  // bubble styling classes (bubble-left for users, bubble-right for admin)
+  const bubbleClass = isAdmin
+    ? "chat-bubble bubble-right"
+    : "chat-bubble bubble-left";
 
   return (
     <div className={rowClass}>
       <div className="bubble-wrapper">
-        {/* avatar on the left for user messages (purely presentational) */}
+        {/* User avatar (only for user messages) */}
         {!isAdmin && (
           <div className="user-avatar" title={m.sender || "User"}>
             <Avatar seed={m.sender || "U"} />
@@ -38,8 +41,11 @@ export default function ChatMessage({
           {repliedMessage && (
             <div className="reply-box">
               <div className="reply-name">
-                {repliedMessage.sender === "admin" ? "You" : repliedMessage.sender}
+                {repliedMessage.sender === "admin"
+                  ? "You"
+                  : repliedMessage.sender}
               </div>
+
               <div className="reply-snippet">
                 {repliedMessage.text
                   ? repliedMessage.text.length > 120
@@ -52,18 +58,25 @@ export default function ChatMessage({
             </div>
           )}
 
-          {/* Content */}
+          {/* MESSAGE CONTENT */}
           {m.type === "image" ? (
             <img
               src={m.url || m.imageUrl}
               alt={m.fileName || "image"}
               className="bubble-img"
-              onClick={() => (m.url || m.imageUrl) && window.open(m.url || m.imageUrl, "_blank")}
+              onClick={() =>
+                (m.url || m.imageUrl) &&
+                window.open(m.url || m.imageUrl, "_blank")
+              }
             />
           ) : m.type === "file" ? (
             <div
               className="bubble-file"
-              onClick={() => (m.url ? window.open(m.url, "_blank") : onDownload && onDownload(m))}
+              onClick={() =>
+                m.url
+                  ? window.open(m.url, "_blank")
+                  : onDownload && onDownload(m)
+              }
             >
               <div className="file-icon">📄</div>
               <div className="file-name">{m.fileName || "Download file"}</div>
@@ -72,18 +85,23 @@ export default function ChatMessage({
             <div className="bubble-text">{m.text}</div>
           )}
 
-          {/* footer */}
+          {/* FOOTER */}
           <div className="bubble-footer">
             <span className="bubble-time">{timeLabel}</span>
             {isAdmin && <span className="bubble-ticks">✓✓</span>}
           </div>
         </div>
 
+        {/* MENU (reply/delete/download) */}
         <div className="bubble-menu">
           <MessageMenu
             onReply={() => onReply && onReply(m)}
             onDelete={() => onDelete && onDelete(m)}
-            onDownload={() => (m.url ? window.open(m.url, "_blank") : onDownload && onDownload(m))}
+            onDownload={() =>
+              m.url
+                ? window.open(m.url, "_blank")
+                : onDownload && onDownload(m)
+            }
           />
         </div>
       </div>
