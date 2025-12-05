@@ -17,7 +17,7 @@ const [uploading, setUploading] = useState(null);
 const dummy = useRef();
 const fileRef = useRef();
 
-// SUBSCRIBE TO THE CORRECT ADMIN PATH
+// SUBSCRIBE TO USER MESSAGE PATH
 useEffect(() => {
 console.log("User Chat subscribing to path:", `messages/${userId}`);
 const chatRef = ref(db, `messages/${userId}`);
@@ -36,11 +36,14 @@ const offFn = onValue(chatRef, (snapshot) => {
   dummy.current?.scrollIntoView({ behavior: "smooth" });
 });
 
-return () => chatRef.off && chatRef.off();
+return () => {
+  if (chatRef.off) chatRef.off();
+};
 ```
 
 }, [userId]);
 
+// SEND TEXT MESSAGE
 const sendMessage = async (e) => {
 e.preventDefault();
 if (!text.trim()) return;
@@ -59,7 +62,7 @@ await push(chatRef, {
 await update(ref(db, `chats/${userId}/profile`), {
   lastMessage: text,
   lastMessageTimestamp: Date.now(),
-  name: userId
+  name: userId,
 });
 
 setText("");
@@ -68,9 +71,10 @@ setText("");
 };
 
 const onAttachClick = () => {
-fileRef.current && fileRef.current.click();
+if (fileRef.current) fileRef.current.click();
 };
 
+// FILE UPLOAD HANDLER
 const handleFile = async (e) => {
 const f = e.target.files && e.target.files[0];
 if (!f) return;
@@ -114,9 +118,8 @@ try {
   await update(ref(db, `chats/${userId}/profile`), {
     lastMessage: f.type.startsWith("image") ? "📷 Image" : f.name,
     lastMessageTimestamp: Date.now(),
-    name: userId
+    name: userId,
   });
-
 } catch (err) {
   console.error("Upload failed:", err);
   alert("Upload failed");
@@ -208,7 +211,12 @@ return (
 <div className={`bubble ${isUser ? "blue" : "grey"}`}>
 {message.type === "image" ? ( <img src={message.url} alt="sent" className="bubble-img" />
 ) : message.type === "file" ? (
-<a href={message.url} target="_blank" rel="noreferrer" style={{ color: "#fff" }}>
+<a
+href={message.url}
+target="_blank"
+rel="noreferrer"
+style={{ color: "#fff" }}
+>
 📄 {message.fileName} </a>
 ) : ( <p>{message.text}</p>
 )}
