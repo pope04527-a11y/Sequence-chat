@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import "./Chat.css";
 import { db } from "./firebase";
-import { ref, push, onValue, set } from "firebase/database";
+import { ref, push, onValue, update } from "firebase/database";
 import { supabase } from "./supabaseClient"; // <-- Make sure this exists
 
 function getUserId() {
@@ -17,9 +17,10 @@ function Chat() {
   const dummy = useRef();
   const fileRef = useRef();
 
+  // 🔥 SUBSCRIBE TO THE CORRECT ADMIN PATH
   useEffect(() => {
-    console.log("User Chat subscribing to path:", `messages/${userId}`);
-    const chatRef = ref(db, `messages/${userId}`);
+    console.log("User Chat subscribing to path:", `chats/${userId}/messages`);
+    const chatRef = ref(db, `chats/${userId}/messages`);
 
     const offFn = onValue(chatRef, (snapshot) => {
       const data = snapshot.val();
@@ -41,24 +42,22 @@ function Chat() {
     e.preventDefault();
     if (!text.trim()) return;
 
-    // Path for user chat
-    const chatRef = ref(db, `messages/${userId}`);
+    const chatRef = ref(db, `chats/${userId}/messages`);
 
-    // Path for admin panel chat
-    const adminRef = ref(db, `chats/${userId}/messages`);
-
-    const messageData = {
+    // 🔥 Write message to admin path
+    await push(chatRef, {
       text,
       sender: userId,
       createdAt: Date.now(),
       type: "text",
-    };
+    });
 
-    // Save user-side message
-    await push(chatRef, messageData);
-
-    // Save admin-side message
-    await push(adminRef, messageData);
+    // 🔥 Update chat list info
+    await update(ref(db, `chats/${userId}/profile`), {
+      lastMessage: text,
+      lastMessageTimestamp: Date.now(),
+      name: userId
+    });
 
     setText("");
   };
@@ -67,7 +66,7 @@ function Chat() {
     fileRef.current && fileRef.current.click();
   };
 
-  // ✅ SUPABASE UPLOAD — CLEAN / FINAL
+  // 📁 SUPABASE FILE UPLOAD
   const handleFile = async (e) => {
     const f = e.target.files && e.target.files[0];
     if (!f) return;
@@ -77,7 +76,7 @@ function Chat() {
     try {
       const filePath = `chat/${Date.now()}_${f.name}`;
 
-      // 1. Upload to Supabase
+      // 1. Upload
       const { data, error } = await supabase.storage
         .from("public-files")
         .upload(filePath, f);
@@ -90,7 +89,7 @@ function Chat() {
 
       setUploading({ name: f.name, progress: 70 });
 
-      // 2. Get public URL
+      // 2. Get URL
       const { data: urlData } = supabase.storage
         .from("public-files")
         .getPublicUrl(filePath);
@@ -99,22 +98,23 @@ function Chat() {
 
       setUploading({ name: f.name, progress: 100 });
 
-      // 3. Save message to Firebase (user path)
-      const chatRef = ref(db, `messages/${userId}`);
+      const chatRef = ref(db, `chats/${userId}/messages`);
 
-      const messageData = {
+      // 3. Store message in correct admin path
+      await push(chatRef, {
         sender: userId,
         type: f.type.startsWith("image") ? "image" : "file",
         url,
         fileName: f.name,
         createdAt: Date.now(),
-      };
+      });
 
-      await push(chatRef, messageData);
-
-      // 4. ALSO write to admin panel path
-      const adminRef = ref(db, `chats/${userId}/messages`);
-      await push(adminRef, messageData);
+      // 4. Update profile entry for admin list
+      await update(ref(db, `chats/${userId}/profile`), {
+        lastMessage: f.type.startsWith("image") ? "📷 Image" : f.name,
+        lastMessageTimestamp: Date.now(),
+        name: userId
+      });
 
     } catch (err) {
       console.error("Upload failed:", err);
