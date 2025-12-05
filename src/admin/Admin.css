@@ -213,29 +213,6 @@ border-bottom:1px solid rgba(255,255,255,0.4);
 backdrop-filter: blur(12px);
 flex: 0 0 auto;
 border-radius:18px 18px 0 0;
-position: relative;
-}
-
-/* BACK BUTTON — responsive mobile only */
-.back-btn{
-display:none;
-position:absolute;
-left:12px;
-top:50%;
-transform:translateY(-50%);
-font-size:22px;
-color:var(--accent);
-cursor:pointer;
-padding:6px;
-border-radius:50%;
-transition:0.15s ease;
-}
-.back-btn:hover{
-background:rgba(16,118,214,0.1);
-}
-
-@media(max-width:900px){
-.back-btn{display:flex;}
 }
 
 .adminchat-header-avatar{
@@ -243,11 +220,6 @@ width:48px; height:48px; border-radius:50%;
 background:var(--accent); color:#fff;
 display:flex;align-items:center;justify-content:center;font-weight:700;
 flex-shrink:0;
-margin-left:40px;
-}
-
-@media(max-width:900px){
-.adminchat-header-avatar{ margin-left:50px; }
 }
 
 .adminchat-header-info{ display:flex; flex-direction:column; min-width:0; }
@@ -349,25 +321,237 @@ color: white;
 color:inherit;
 font-size:15px;
 white-space:pre-wrap;
-max-width
-/* Back button styles */
-.back-button {
-  display: none;
-  position: absolute;
-  top: 16px;
-  left: 16px;
-  background: var(--accent);
-  color: #fff;
-  padding: 10px 14px;
-  border-radius: 12px;
-  font-weight: 600;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-  cursor: pointer;
-  z-index: 999;
+max-width: 100%;
+word-break: break-word;
+}
+
+/* reply previews */
+.reply-box, .wa-reply-box {
+border-left:4px solid rgba(0,0,0,0.08);
+background: rgba(0,0,0,0.03);
+padding:8px 10px;
+margin-bottom:8px;
+border-radius:8px;
+color: var(--muted);
+overflow: hidden;
+}
+.reply-name, .wa-reply-name { font-weight:700; font-size:13px; color:var(--text); margin-bottom:4px; }
+.reply-snippet, .wa-reply-snippet { font-size:13px; color:var(--muted); }
+
+/* ---------- IMAGES ---------- */
+.bubble-img {
+max-width: 100%;
+height: auto;
+border-radius: 12px;
+display: block;
+margin-bottom: 8px;
+box-sizing: border-box;
+border: 3px solid rgba(16,118,214,0.12);
+object-fit: cover;
+cursor: pointer;
+}
+
+/* ---------- FILE BUBBLE ---------- */
+.bubble-file, .wa-file {
+background: rgba(255,255,255,0.6);
+padding:10px;
+border-radius:10px;
+display:flex;
+gap:10px;
+align-items:center;
+width: 100%;
+max-width: 520px;
+box-sizing: border-box;
+cursor: pointer;
+backdrop-filter: blur(6px);
+}
+.file-icon{ font-size:20px; flex-shrink: 0; }
+.file-name{ font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+/* footer */
+.bubble-footer, .wa-footer {
+display:flex;
+gap:8px;
+justify-content:flex-end;
+align-items:center;
+margin-top:8px;
+font-size:12px;
+color:var(--muted);
+}
+
+/* ---------- bubble menu ---------- */
+.bubble-menu {
+display: flex;
+align-items: center;
+height: 100%;
+flex-shrink: 0;
+}
+.bubble-menu > * {
+display: flex;
+}
+
+/* ---------- Input bar ---------- */
+.adminchat-inputbar{
+padding:12px 18px;
+border-top:1px solid rgba(255,255,255,0.4);
+background: var(--panel);
+display:flex; gap:12px; align-items:center;
+width: 100%;
+box-sizing: border-box;
+flex: 0 0 auto;
+backdrop-filter: blur(14px);
+border-radius:0 0 18px 18px;
+}
+
+.message-input{
+flex:1;
+padding:14px 16px;
+border-radius:20px;
+background: rgba(255,255,255,0.75);
+border:1px solid rgba(255,255,255,0.8);
+color:var(--text);
+font-size:15px;
+min-width: 0;
+}
+.message-input::placeholder{ color:rgba(0,0,0,0.35); }
+
+.file-btn{ color:var(--muted); font-size:20px; cursor:pointer; flex: 0 0 auto; }
+
+.send-btn{
+background:var(--accent);
+color:white; padding:10px 16px; border-radius:14px;
+border:none; cursor:pointer; font-weight:700;
+box-shadow: 0 8px 20px rgba(16,118,214,0.18);
+flex: 0 0 auto;
+}
+
+/* ---------- Empty state ---------- */
+.empty-state{ display:flex; align-items:center; justify-content:center; color:var(--muted); font-size:18px; height:100% }
+.no-msg{ color:var(--muted); padding:8px 12px }
+
+/* ---------- Responsive ---------- */
+@media (max-width: 1200px) {
+:root { --sidebar-width: 300px; }
+.admin-container { grid-template-columns: var(--sidebar-width) 1fr; }
+.chat-stage { max-width: 980px; padding: 16px; }
 }
 
 @media (max-width: 900px) {
-  .back-button { display: block; }
-  .admin-users { display: none; }
-  .admin-users.open { display: block; }
+.admin-container {
+grid-template-columns: 1fr;
+grid-auto-rows: auto 1fr;
 }
+.admin-users {
+width: 100%;
+border-right: none;
+border-bottom: 1px solid rgba(255,255,255,0.4);
+border-radius:0;
+}
+.chat-stage {
+max-width: 100%;
+padding: 12px;
+height: calc(100vh - 80px);
+}
+
+.bubble-img { border-radius: 10px; }
+
+.user-avatar { width:40px; height:40px; }
+.adminchat-header-avatar { width:44px; height:44px; }
+
+.messages-inner { padding: 8px 12px 20px 12px; }
+}
+
+@media (max-width: 480px) {
+:root { --gutter: 12px; }
+.adminchat-header { padding: 12px; gap: 10px; }
+.adminchat-header-name { font-size: 15px; }
+.message-input { padding: 12px; font-size: 14px; }
+.send-btn { padding: 8px 12px; font-size: 14px; }
+.bubble-img { max-width: 100%; }
+.messages-inner { max-width: 100%; padding-left: 8px; padding-right: 8px; }
+}
+
+/* Utility helpers */
+.hidden { display: none !important; }
+.center { display:flex; align-items:center; justify-content:center; }
+
+/* Accessibility focus outlines */
+:focus { outline: 3px solid rgba(16,118,214,0.2); outline-offset: 2px; border-radius: 6px; }
+
+/* ==========================================================
+AVATAR ALIGNMENT FIX
+========================================================== */
+
+.bubble-wrapper {
+align-items: flex-end;
+}
+
+.row-user .bubble-wrapper,
+.row-admin .bubble-wrapper {
+align-items: center !important;
+}
+
+.bubble-avatar {
+width: 36px;
+height: 36px;
+border-radius: 50%;
+flex-shrink: 0;
+display: flex;
+align-items: center;
+justify-content: center;
+}
+
+/* ==========================================================
+MOBILE BACK BUTTON + SLIDE-IN SIDEBAR (ADDED)
+========================================================== */
+
+@media (max-width: 900px) {
+.admin-container {
+position: relative;
+}
+
+/* Sidebar becomes hidden by default */
+.admin-users {
+position: absolute;
+top: 0;
+left: 0;
+height: 100%;
+max-width: 320px;
+width: 85%;
+transform: translateX(-100%);
+transition: transform 0.28s ease;
+z-index: 20;
+}
+
+/* When active */
+.admin-users.show {
+transform: translateX(0);
+}
+
+/* Chat becomes full-screen */
+.admin-main {
+width: 100%;
+height: 100%;
+}
+
+/* Back button (top-left, inside chat header) */
+.mobile-back-btn {
+display: flex;
+align-items: center;
+justify-content: center;
+margin-right: 8px;
+width: 34px;
+height: 34px;
+border-radius: 50%;
+background: rgba(0,0,0,0.08);
+cursor: pointer;
+}
+
+/* Hidden on desktop */
+@media (min-width: 901px) {
+.mobile-back-btn {
+display: none !important;
+}
+}
+}
+/* end of file */
