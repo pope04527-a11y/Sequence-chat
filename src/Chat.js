@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import "./Chat.css";
 import { db } from "./firebase";
-import { ref, push, onValue } from "firebase/database";
+import { ref, push, onValue, set } from "firebase/database";
 import { supabase } from "./supabaseClient"; // <-- Make sure this exists
 
 function getUserId() {
@@ -41,14 +41,24 @@ function Chat() {
     e.preventDefault();
     if (!text.trim()) return;
 
+    // Path for user chat
     const chatRef = ref(db, `messages/${userId}`);
 
-    await push(chatRef, {
+    // Path for admin panel chat
+    const adminRef = ref(db, `chats/${userId}/messages`);
+
+    const messageData = {
       text,
       sender: userId,
       createdAt: Date.now(),
       type: "text",
-    });
+    };
+
+    // Save user-side message
+    await push(chatRef, messageData);
+
+    // Save admin-side message
+    await push(adminRef, messageData);
 
     setText("");
   };
@@ -89,16 +99,23 @@ function Chat() {
 
       setUploading({ name: f.name, progress: 100 });
 
-      // 3. Save message to Firebase
+      // 3. Save message to Firebase (user path)
       const chatRef = ref(db, `messages/${userId}`);
 
-      await push(chatRef, {
+      const messageData = {
         sender: userId,
         type: f.type.startsWith("image") ? "image" : "file",
         url,
         fileName: f.name,
         createdAt: Date.now(),
-      });
+      };
+
+      await push(chatRef, messageData);
+
+      // 4. ALSO write to admin panel path
+      const adminRef = ref(db, `chats/${userId}/messages`);
+      await push(adminRef, messageData);
+
     } catch (err) {
       console.error("Upload failed:", err);
       alert("Upload failed");
