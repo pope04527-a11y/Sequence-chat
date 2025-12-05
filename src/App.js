@@ -20,15 +20,17 @@ function App() {
       <Routes>
         {/* Public Pages */}
         <Route path="/" element={<Welcome />} />
-
-        {/* Chat route with username */}
-        <Route path="/chat/:username" element={<Chat />} />
+        <Route path="/chat" element={<Chat />} />
 
         {/* Integrated Admin App (handles sidebar + chat + details) */}
         <Route
           path="/admin/*"
           element={isAdmin ? <AdminApp /> : <Navigate to="/" />}
         />
+
+        {/* Keep old direct admin routes if you still need them (optional)
+            If you prefer the AdminApp to fully replace them, you can remove them.
+        */}
 
         {/* Fallback */}
         <Route path="*" element={<Navigate to="/" />} />
