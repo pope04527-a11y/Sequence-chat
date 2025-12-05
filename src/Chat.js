@@ -1,4 +1,3 @@
-// src/Chat.js
 import React, { useState, useEffect, useRef } from "react";
 import "./Chat.css";
 import { db } from "./firebase";
@@ -6,7 +5,6 @@ import { ref, push, onValue, update } from "firebase/database";
 import { supabase } from "./supabaseClient";
 import { useLocation, useNavigate } from "react-router-dom";
 
-// ❗ Fallback only, rarely used
 function getUserIdFromURL() {
   const params = new URLSearchParams(window.location.search);
   return params.get("user") || null;
@@ -16,19 +14,19 @@ function Chat() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // 🔥 FIXED USERNAME HANDLING
+  // ✅ Universal username handling
   const userId =
     location.state?.username ||
     localStorage.getItem("chat-username") ||
     getUserIdFromURL() ||
     "unknown-user";
 
-  // 🔥 Save received username
+  // 🔥 Always save username correctly
   useEffect(() => {
-    if (location.state?.username) {
-      localStorage.setItem("chat-username", location.state.username);
+    if (userId) {
+      localStorage.setItem("chat-username", userId);
     }
-  }, [location.state]);
+  }, [userId]);
 
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState("");
@@ -41,6 +39,7 @@ function Chat() {
 
     const off = onValue(chatRef, (snap) => {
       const data = snap.val() || {};
+
       const arr = Object.entries(data)
         .map(([id, v]) => ({ id, ...v }))
         .sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
@@ -75,11 +74,11 @@ function Chat() {
   };
 
   const onAttachClick = () => {
-    if (fileRef.current) fileRef.current.click();
+    fileRef.current?.click();
   };
 
   const handleFile = async (e) => {
-    const f = e.target.files && e.target.files[0];
+    const f = e.target.files?.[0];
     if (!f) return;
 
     setUploading({ name: f.name, progress: 10 });
@@ -92,7 +91,6 @@ function Chat() {
         .upload(filePath, f);
 
       if (error) {
-        console.error(error);
         alert("Upload failed");
         return;
       }
@@ -107,9 +105,7 @@ function Chat() {
 
       setUploading({ name: f.name, progress: 100 });
 
-      const chatRef = ref(db, `messages/${userId}`);
-
-      await push(chatRef, {
+      await push(ref(db, `messages/${userId}`), {
         sender: userId,
         type: f.type.startsWith("image") ? "image" : "file",
         url,
@@ -122,9 +118,6 @@ function Chat() {
         lastMessageTimestamp: Date.now(),
         name: userId,
       });
-    } catch (err) {
-      console.error(err);
-      alert("Upload failed");
     } finally {
       try {
         e.target.value = "";
@@ -136,15 +129,9 @@ function Chat() {
   return (
     <div className="chat-container">
       <div className="chat-header">
-        {/* 🔥 FIXED — Back now returns username correctly */}
-        <button
-          className="back-btn"
-          onClick={() =>
-            navigate("/", {
-              state: { username: userId },
-            })
-          }
-        >
+
+        {/* ✅ FIX: Back button — NO username needed */}
+        <button className="back-btn" onClick={() => navigate("/")}>
           ←
         </button>
 
@@ -171,7 +158,11 @@ function Chat() {
           onChange={handleFile}
         />
 
-        <button type="button" className="attach-btn" onClick={onAttachClick}>
+        <button
+          type="button"
+          className="attach-btn"
+          onClick={onAttachClick}
+        >
           📎
         </button>
 
@@ -181,41 +172,13 @@ function Chat() {
           placeholder="Enter your message"
         />
 
-        <button type="submit" className="send-btn">➤</button>
+        <button type="submit" className="send-btn">
+          ➤
+        </button>
       </form>
 
       {uploading && (
-        <div
-          style={{
-            position: "fixed",
-            bottom: 80,
-            left: 24,
-            background: "#fff",
-            padding: 10,
-            borderRadius: 8,
-            boxShadow: "0 6px 18px rgba(0,0,0,0.06)",
-          }}
-        >
-          <div style={{ fontSize: 13, fontWeight: 600 }}>{uploading.name}</div>
-          <div
-            style={{
-              width: 240,
-              height: 8,
-              background: "#eee",
-              borderRadius: 6,
-              marginTop: 8,
-            }}
-          >
-            <div
-              style={{
-                width: `${uploading.progress}%`,
-                height: "100%",
-                background: "#0b7bdb",
-                borderRadius: 6,
-              }}
-            />
-          </div>
-        </div>
+        <UploadingIndicator uploading={uploading} />
       )}
     </div>
   );
@@ -230,12 +193,7 @@ function ChatBubble({ message, userId }) {
         {message.type === "image" ? (
           <img src={message.url} alt="sent" className="bubble-img" />
         ) : message.type === "file" ? (
-          <a
-            href={message.url}
-            target="_blank"
-            rel="noreferrer"
-            style={{ color: "#fff" }}
-          >
+          <a href={message.url} target="_blank" rel="noreferrer" style={{ color: "#fff" }}>
             📄 {message.fileName}
           </a>
         ) : (
@@ -247,6 +205,42 @@ function ChatBubble({ message, userId }) {
             ? new Date(message.createdAt).toLocaleTimeString()
             : ""}
         </div>
+      </div>
+    </div>
+  );
+}
+
+function UploadingIndicator({ uploading }) {
+  return (
+    <div
+      style={{
+        position: "fixed",
+        bottom: 80,
+        left: 24,
+        background: "#fff",
+        padding: 10,
+        borderRadius: 8,
+        boxShadow: "0 6px 18px rgba(0,0,0,0.06)",
+      }}
+    >
+      <div style={{ fontSize: 13, fontWeight: 600 }}>{uploading.name}</div>
+      <div
+        style={{
+          width: 240,
+          height: 8,
+          background: "#eee",
+          borderRadius: 6,
+          marginTop: 8,
+        }}
+      >
+        <div
+          style={{
+            width: `${uploading.progress}%`,
+            height: "100%",
+            background: "#0b7bdb",
+            borderRadius: 6,
+          }}
+        />
       </div>
     </div>
   );
