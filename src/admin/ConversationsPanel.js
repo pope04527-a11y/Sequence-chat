@@ -1,40 +1,46 @@
 import React, { useEffect, useState } from "react";
-import { useAdmin } from "./AdminContext";
 import ConversationListItem from "./ConversationListItem";
 import "./Admin.css";
-import { ref as dbRef, onValue } from "firebase/database";
+import { ref as dbRef, onValue, off } from "firebase/database";
 import { db } from "../firebase";
+import { useAdmin } from "./AdminContext";
 
 export default function ConversationsPanel() {
-  const { conversations, activeConversation, setActiveConversation } = useAdmin();
-  const [fallbackList, setFallbackList] = useState(null);
-  const [loadingFallback, setLoadingFallback] = useState(false);
+  const { activeConversation, setActiveConversation } = useAdmin();
+  const [list, setList] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (conversations && conversations.length > 0) {
-      setFallbackList(null);
-      return;
-    }
-
-    setLoadingFallback(true);
     const messagesRef = dbRef(db, "messages");
-    const off = onValue(messagesRef, (snap) => {
-      const data = snap.val();
+
+    const unsubscribe = onValue(messagesRef, (snapshot) => {
+      const data = snapshot.val();
+
       if (!data) {
-        setFallbackList([]);
-        setLoadingFallback(false);
+        setList([]);
+        setLoading(false);
         return;
       }
 
-      const list = Object.entries(data)
+      // Convert messages into a list
+      const users = Object.entries(data)
         .map(([userId, msgs]) => {
           if (!msgs) return null;
+
           const arr = Object.values(msgs);
+
+          // Sort by time
           arr.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
           const last = arr[0] || {};
+
+          let lastMsgText = "";
+          if (last.type === "text") lastMsgText = last.text || "";
+          else if (last.type === "image") lastMsgText = "📷 Image";
+          else if (last.type === "file") lastMsgText = last.fileName || "📁 File";
+
           return {
             userId,
-            lastMessage: last.text || (last.type === "image" ? "Image" : ""),
+            lastMessage: lastMsgText,
             lastSender: last.sender || "unknown",
             lastTimestamp: last.createdAt || 0,
             unreadCount: 0,
@@ -43,20 +49,15 @@ export default function ConversationsPanel() {
         .filter(Boolean)
         .sort((a, b) => b.lastTimestamp - a.lastTimestamp);
 
-      setFallbackList(list);
-      setLoadingFallback(false);
+      setList(users);
+      setLoading(false);
     });
 
     return () => {
-      try {
-        messagesRef.off && messagesRef.off();
-      } catch (e) {}
-      off && off();
+      off(messagesRef);
+      unsubscribe && unsubscribe();
     };
-  }, [conversations]);
-
-  const listToRender =
-    conversations && conversations.length > 0 ? conversations : fallbackList || [];
+  }, []);
 
   return (
     <div className="admin-users">
@@ -65,21 +66,15 @@ export default function ConversationsPanel() {
       </div>
 
       <div className="users-list">
-        {conversations && conversations.length === 0 && loadingFallback ? (
+        {loading ? (
           <div className="no-msg">Loading conversations…</div>
-        ) : listToRender.length === 0 ? (
+        ) : list.length === 0 ? (
           <div className="no-msg">No conversations</div>
         ) : (
-          listToRender.map((c) => (
+          list.map((c) => (
             <ConversationListItem
               key={c.userId}
-              user={{
-                userId: c.userId,
-                lastMessage: c.lastMessage,
-                lastSender: c.lastSender,
-                lastTimestamp: c.lastTimestamp,
-                unreadCount: c.unreadCount,
-              }}
+              user={c}
               active={activeConversation === c.userId}
               onClick={() => setActiveConversation(c.userId)}
             />
