@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import ConversationListItem from "./ConversationListItem";
 import "./Admin.css";
 import { ref as dbRef, onValue, off } from "firebase/database";
@@ -7,6 +8,7 @@ import { useAdmin } from "./AdminContext";
 
 export default function ConversationsPanel() {
   const { activeConversation, setActiveConversation } = useAdmin();
+  const navigate = useNavigate();
   const [list, setList] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -76,7 +78,10 @@ export default function ConversationsPanel() {
               key={c.userId}
               user={c}
               active={activeConversation === c.userId}
-              onClick={() => setActiveConversation(c.userId)}
+              onClick={() => {
+                setActiveConversation(c.userId);
+                navigate(`/admin/chat/${encodeURIComponent(c.userId)}`);
+              }}
             />
           ))
         )}
