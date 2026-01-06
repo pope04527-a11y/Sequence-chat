@@ -1,6 +1,7 @@
 /* ==========================================================
 Admin.css — Mint Gradient Theme (Based on your screenshot)
 Blue accent preserved (#1076D6)
+UPDATED: Compact persistent sidebar + user action UI (delete/block)
 ========================================================== */
 
 :root{
@@ -26,6 +27,7 @@ Blue accent preserved (#1076D6)
 --glass: rgba(255,255,255,0.35);
 
 --sidebar-width: 360px;
+--compact-sidebar: 72px;
 --gutter: 20px;
 }
 
@@ -122,6 +124,7 @@ font-weight:700;
 /* MESSAGE LIST ITEMS */
 .user-list-item,
 .user-item{
+position: relative;
 display:flex;
 align-items:center;
 justify-content:space-between;
@@ -161,6 +164,11 @@ position:relative;
 flex-shrink: 0;
 }
 
+/* Compact avatar size when compact sidebar is active */
+.admin-users.compact .user-avatar {
+  width:44px; height:44px;
+}
+
 /* online dot */
 .user-avatar.online::after{
 content: "";
@@ -181,6 +189,89 @@ box-shadow: 0 0 0 4px rgba(16,118,214,0.05);
 .user-right{ display:flex; align-items:flex-start; flex-direction:column; gap:6px; justify-content:center; flex:0 0 auto; }
 .time{ font-size:12px; color:var(--muted); }
 
+/* Action buttons container (delete/block, more) */
+.user-actions{
+display:flex;
+align-items:center;
+gap:8px;
+position: absolute;
+right: 12px;
+top: 50%;
+transform: translateY(-50%) translateX(6px);
+opacity: 0;
+pointer-events: none;
+transition: opacity 140ms ease, transform 140ms ease;
+}
+
+/* Buttons (icon style) */
+.user-actions button{
+background: transparent;
+border: none;
+padding: 6px;
+border-radius: 8px;
+cursor: pointer;
+display: inline-flex;
+align-items: center;
+justify-content: center;
+color: var(--muted);
+transition: background 120ms ease, color 120ms ease;
+}
+.user-actions button:hover{
+background: rgba(0,0,0,0.06);
+color: var(--accent-600);
+}
+
+/* Show actions when hovering list item or when parent has a class 'show-actions' */
+.user-list-item:hover .user-actions,
+.user-list-item.show-actions .user-actions,
+.user-item:hover .user-actions,
+.user-item.show-actions .user-actions {
+opacity: 1;
+pointer-events: auto;
+transform: translateY(-50%) translateX(0);
+}
+
+/* Badged states (blocked) */
+.user-list-item.blocked,
+.user-item.blocked {
+opacity: 0.6;
+filter: grayscale(0.15);
+}
+.user-list-item.blocked .user-id,
+.user-item.blocked .last-msg { text-decoration: line-through; }
+
+/* compact mode: hide text, show only avatars and inline action icons */
+.admin-users.compact .user-meta,
+.admin-users.compact .user-right {
+  display: none;
+}
+
+/* ensure avatar stack layout in compact */
+.admin-users.compact .user-list-item,
+.admin-users.compact .user-item {
+  justify-content: center;
+  padding: 10px;
+  border-radius: 12px;
+  margin: 8px 6px;
+  width: calc(100% - 12px);
+}
+
+/* show actions as a small overlay underneath avatar in compact mode when hovered */
+.admin-users.compact .user-actions {
+  right: 50%;
+  transform: translateY(8px) translateX(50%);
+  top: auto;
+  bottom: -6px;
+  opacity: 0;
+  pointer-events: none;
+}
+.admin-users.compact .user-list-item:hover .user-actions {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0) translateX(50%);
+}
+
+/* badge */
 .badge{
 background:var(--accent);
 color:white;
@@ -436,31 +527,148 @@ flex: 0 0 auto;
 .chat-stage { max-width: 980px; padding: 16px; }
 }
 
+/* New behavior: compact persistent sidebar on narrow widths.
+   Desktop (>=900px): full sidebar visible
+   Narrow (<900px): by default the sidebar becomes compact (icons/avatars only)
+   Add .admin-users.show OR .admin-users.expanded (via JS) to expand the full sidebar
+*/
 @media (max-width: 900px) {
+:root { --sidebar-width: 300px; }
+
+/* Default layout: compact left column + content */
 .admin-container {
-grid-template-columns: 1fr;
+grid-template-columns: var(--compact-sidebar) 1fr;
 grid-auto-rows: auto 1fr;
 }
+
+/* compact sidebar appearance */
 .admin-users {
-width: 100%;
-border-right: none;
-border-bottom: 1px solid rgba(255,255,255,0.4);
-border-radius:0;
+width: var(--compact-sidebar);
+min-width: var(--compact-sidebar);
+max-width: var(--compact-sidebar);
+padding: 10px 6px;
+border-right: 1px solid rgba(255,255,255,0.08);
+border-radius: 0;
+position: relative;
+height: 100vh;
+overflow-y: auto;
+transform: none !important; /* ensure it's visible in compact mode */
 }
+
+/* When the sidebar is expanded (JS should toggle .expanded or .show) */
+.admin-users.expanded,
+.admin-users.show {
+width: var(--sidebar-width);
+min-width: 220px;
+max-width: var(--sidebar-width);
+padding: 18px;
+position: fixed;
+top: 0;
+left: 0;
+height: 100vh;
+transform: translateX(0);
+box-shadow: 2px 0 20px rgba(2,6,23,0.12);
+z-index: 30;
+}
+
+/* ensure chat occupies full width when compact */
 .chat-stage {
 max-width: 100%;
 padding: 12px;
-height: calc(100vh - 80px);
+height: 100vh;
 }
 
-.bubble-img { border-radius: 10px; }
-
-.user-avatar { width:40px; height:40px; }
-.adminchat-header-avatar { width:44px; height:44px; }
-
-.messages-inner { padding: 8px 12px 20px 12px; }
+/* Keep avatar list readable in compact mode: stack items vertically but centered */
+.admin-users.compact,
+.admin-users {
+display: flex;
+flex-direction: column;
+align-items: center;
+gap: 6px;
 }
 
+/* In compact mode hide text meta but keep avatars visible */
+.admin-users .user-meta,
+.admin-users .user-right {
+display: none;
+}
+
+/* show only avatars as vertical list */
+.admin-users .user-list-item,
+.admin-users .user-item {
+width: 100%;
+display: flex;
+align-items: center;
+justify-content: center;
+padding: 6px;
+background: transparent;
+border: none;
+box-shadow: none;
+}
+
+/* in expanded mode restore full list appearance */
+.admin-users.expanded .user-list-item,
+.admin-users.show .user-list-item {
+display: flex;
+align-items: center;
+justify-content: space-between;
+padding: 12px;
+background: rgba(255,255,255,0.4);
+border-radius:14px;
+border:1px solid rgba(255,255,255,0.4);
+}
+
+/* show user-actions as small overlay under avatar in compact */
+.admin-users .user-actions {
+right: auto;
+left: 50%;
+transform: translateX(-50%) translateY(8px);
+top: auto;
+bottom: -6px;
+opacity: 0;
+pointer-events: none;
+}
+
+/* small screens: reveal actions on avatar hover */
+.admin-users .user-list-item:hover .user-actions,
+.admin-users .user-item:hover .user-actions {
+opacity: 1;
+pointer-events: auto;
+transform: translateX(-50%) translateY(0);
+}
+
+/* if the sidebar is expanded, ensure actions are at right */
+.admin-users.expanded .user-actions {
+right: 12px;
+left: auto;
+transform: translateY(-50%) translateX(0);
+top: 50%;
+bottom: auto;
+}
+
+/* accessible back button inside chat header when sidebar expanded on mobile */
+.mobile-back-btn {
+display: flex;
+align-items: center;
+justify-content: center;
+margin-right: 8px;
+width: 34px;
+height: 34px;
+border-radius: 50%;
+background: rgba(0,0,0,0.08);
+cursor: pointer;
+}
+
+/* ensure mobile-only back button hides on desktop */
+@media (min-width: 901px) {
+.mobile-back-btn {
+display: none !important;
+}
+}
+
+}
+
+/* smaller phones */
 @media (max-width: 480px) {
 :root { --gutter: 12px; }
 .adminchat-header { padding: 12px; gap: 10px; }
@@ -505,57 +713,12 @@ justify-content: center;
 MOBILE BACK BUTTON + SLIDE-IN SIDEBAR (ADDED)
 ========================================================== */
 
-@media (max-width: 900px) {
-.admin-container {
-position: relative;
-}
-
-/* Sidebar becomes hidden by default */
-.admin-users {
-position: absolute;
-top: 0;
-left: 0;
-height: 100%;
-max-width: 320px;
-width: 85%;
-transform: translateX(-100%);
-transition: transform 0.28s ease;
-z-index: 20;
-}
-
-/* When active */
-.admin-users.show {
-transform: translateX(0);
-}
-
-/* Chat becomes full-screen */
-.admin-main {
-width: 100%;
-height: 100%;
-}
-
-/* Back button (top-left, inside chat header) */
-.mobile-back-btn {
-display: flex;
-align-items: center;
-justify-content: center;
-margin-right: 8px;
-width: 34px;
-height: 34px;
-border-radius: 50%;
-background: rgba(0,0,0,0.08);
-cursor: pointer;
-}
-
-/* Hidden on desktop */
-@media (min-width: 901px) {
-.mobile-back-btn {
-display: none !important;
-}
-}
-}
-/* end of file */
-
+/* NOTE:
+   This block preserves slide-in behavior if your JS toggles
+   .admin-users.expanded or .admin-users.show on the sidebar root.
+   In the absence of JS, the sidebar will remain compact but visible
+   (Telegram-like compact column) on narrow widths.
+*/
 
 /* ==========================================================
 MAKE SENDER (ADMIN) MESSAGE TIME VISIBLE
