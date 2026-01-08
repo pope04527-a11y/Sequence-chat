@@ -15,7 +15,7 @@ import Composer from "./Composer";
 import "./Admin.css";
 import ChatMessage from "./ChatMessage";
 import DateSeparator from "./DateSeparator";
-import { supabase } from "../supabaseClient"; // used to remove uploaded files
+import { supabase } from "../supabaseClient"; // kept for compatibility with other handlers
 
 function formatDateHeader(ts) {
   if (!ts) return "";
@@ -39,6 +39,7 @@ export default function ChatPanel() {
     agentId,
     sendFileMessage,
     sendTextMessage,
+    setActiveConversation, // used to navigate back after hiding a conversation
   } = useAdmin();
 
   const [messages, setMessages] = useState([]);
@@ -249,72 +250,56 @@ export default function ChatPanel() {
     }
   }, [activeConversation]);
 
-  // Admin action: delete user entirely (delete messages, remove files in Supabase, clear meta)
-  const handleDeleteUser = useCallback(async () => {
+  // NEW: Hide conversation locally from admin panel only (no DB changes)
+  // This stores the hidden conversation id in localStorage under "hiddenConversations"
+  // and clears the activeConversation in the UI.
+  const handleHideConversationLocally = useCallback(() => {
     if (!activeConversation) return;
     const ok = window.confirm(
-      "Delete this user and all related data (messages, meta, uploaded files). This is irreversible. Continue?"
+      "Remove this conversation from the admin panel view? This only hides it locally and does NOT delete data from the database. Continue?"
     );
     if (!ok) return;
 
     try {
-      // 1) Read messages once
-      const snap = await dbGet(dbRef(db, `messages/${activeConversation}`));
-      const raw = snap.val() || {};
-
-      // Collect storage paths to remove from Supabase
-      const storagePaths = [];
-      Object.values(raw).forEach((m) => {
-        // expects messages to include `storagePath` when uploaded (recommended)
-        if (m && m.storagePath) storagePaths.push(m.storagePath);
-      });
-
-      // 2) Remove files in Supabase (if any)
-      if (storagePaths.length > 0) {
+      // Read existing hidden list
+      const raw = localStorage.getItem("hiddenConversations");
+      let hidden = [];
+      if (raw) {
         try {
-          // Remove multiple paths in one call
-          const { error } = await supabase.storage
-            .from("public-files")
-            .remove(storagePaths);
-          if (error) {
-            console.warn("Supabase file deletion encountered an error:", error);
-            // continue — don't abort the whole operation
-          }
-        } catch (err) {
-          console.warn("Error removing files from Supabase:", err);
+          hidden = JSON.parse(raw) || [];
+        } catch (e) {
+          hidden = [];
         }
       }
 
-      // 3) Remove all messages node
-      await dbRemove(dbRef(db, `messages/${activeConversation}`));
+      if (!hidden.includes(activeConversation)) {
+        hidden.push(activeConversation);
+        localStorage.setItem("hiddenConversations", JSON.stringify(hidden));
+      }
 
-      // 4) Clear meta entries
-      await dbUpdate(dbRef(db, `meta/conversations/${activeConversation}`), {
-        lastMessage: null,
-        lastSender: null,
-        lastTimestamp: null,
-        status: "deleted",
-        deletedAt: Date.now(),
-      });
-      await dbUpdate(dbRef(db, `meta/users/${activeConversation}`), {
-        is_deleted: true,
-        deletedAt: Date.now(),
-      });
-
-      // 5) Optionally: try to remove any other per-user nodes (typing, presence)
-      await dbRemove(dbRef(db, `typing/${activeConversation}`)).catch(() => {});
-      await dbRemove(dbRef(db, `presence/${activeConversation}`)).catch(() => {});
-
-      // 6) Final UI updates
+      // Clear UI and navigate back to /admin
       setMessages([]);
       setReplyTo(null);
 
-      alert("User and conversation data deleted. Note: auth account (Firebase Auth) is not deleted from the client — see notes.");
+      // Clear active conversation in context (if available)
+      if (typeof setActiveConversation === "function") {
+        setActiveConversation(null);
+      }
+
+      // Update URL to /admin so AdminApp syncs to no active chat
+      try {
+        window.history.pushState({}, "", "/admin");
+        window.dispatchEvent(new PopStateEvent("popstate"));
+      } catch (e) {
+        // ignore; not critical
+      }
+
+      alert("Conversation removed from this panel. To restore, remove it from the browser's localStorage key 'hiddenConversations'.");
     } catch (err) {
-      console.error("Failed to delete user and data:", err);
-      alert("Failed to delete user: " + (err.message || err));
+      console.error("Failed to hide conversation locally:", err);
+      alert("Failed to remove conversation from panel.");
     }
-  }, [activeConversation]);
+  }, [activeConversation, setActiveConversation]);
 
   if (!activeConversation)
     return <div className="empty-state">Select a conversation</div>;
@@ -338,7 +323,7 @@ export default function ChatPanel() {
             <div className="adminchat-header-status">Admin: {agentId}</div>
           </div>
 
-          {/* Admin action buttons (block user / delete convo / delete user) */}
+          {/* Admin action buttons (block user / delete convo / hide locally) */}
           <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
             <button
               onClick={handleBlockUser}
@@ -369,21 +354,21 @@ export default function ChatPanel() {
               Delete Conversation
             </button>
 
-            {/* NEW: Delete User (removes user meta, messages and uploaded files if storagePath present) */}
+            {/* Hide locally button (no DB changes) */}
             <button
-              onClick={handleDeleteUser}
-              title="Delete user and all data"
+              onClick={handleHideConversationLocally}
+              title="Remove from panel (local only)"
               style={{
                 padding: "8px 10px",
                 borderRadius: 8,
                 cursor: "pointer",
-                background: "#ff4d4f",
+                background: "#4b5563",
                 border: "1px solid rgba(0,0,0,0.06)",
                 color: "#fff",
                 fontWeight: 700
               }}
             >
-              Delete User
+              Remove from panel
             </button>
           </div>
         </div>
