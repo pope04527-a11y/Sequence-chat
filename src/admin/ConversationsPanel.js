@@ -11,6 +11,29 @@ export default function ConversationsPanel() {
   const navigate = useNavigate();
   const [list, setList] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [hiddenConversations, setHiddenConversations] = useState(() => {
+    try {
+      const raw = localStorage.getItem("hiddenConversations");
+      return raw ? JSON.parse(raw) : [];
+    } catch (e) {
+      return [];
+    }
+  });
+
+  // Listen for changes to localStorage from other tabs/windows
+  useEffect(() => {
+    function onStorage(e) {
+      if (e.key === "hiddenConversations") {
+        try {
+          setHiddenConversations(e.newValue ? JSON.parse(e.newValue) : []);
+        } catch (err) {
+          setHiddenConversations([]);
+        }
+      }
+    }
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
 
   useEffect(() => {
     const messagesRef = dbRef(db, "messages");
@@ -61,6 +84,9 @@ export default function ConversationsPanel() {
     };
   }, []);
 
+  // Filter out locally-hidden conversations
+  const visibleList = list.filter((c) => !hiddenConversations.includes(c.userId));
+
   return (
     <div className="admin-users">
       <div className="sidebar-header">
@@ -70,10 +96,10 @@ export default function ConversationsPanel() {
       <div className="users-list">
         {loading ? (
           <div className="no-msg">Loading conversations…</div>
-        ) : list.length === 0 ? (
+        ) : visibleList.length === 0 ? (
           <div className="no-msg">No conversations</div>
         ) : (
-          list.map((c) => (
+          visibleList.map((c) => (
             <ConversationListItem
               key={c.userId}
               user={c}
