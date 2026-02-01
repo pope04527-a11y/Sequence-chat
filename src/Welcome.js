@@ -48,12 +48,12 @@ export default function Welcome() {
       >
         <div className="profile">
           <img
-            src="/ChatGPT Image Dec 6, 2025, 06_09_52 AM.png"
+            src="/Cs.jpg"
             alt="Stacks Logo"
             className="avatar"
           />
           <div className="profile-text">
-            <h4>Stacks-CS</h4>
+            <h4>Sequence</h4>
             <span>Customer Service</span>
           </div>
         </div>
