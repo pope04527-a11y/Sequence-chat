@@ -21,14 +21,14 @@ import { supabase } from "./supabaseClient";
 // 🔥 Firebase RTDB Setup
 // -------------------------------------------------------
 const firebaseConfig = {
-  apiKey: "AIzaSyDeJhHkhCmsCUe5nFLEb6ey5KruAsNFNuQ",
-  authDomain: "stacks-chat-b795c.firebaseapp.com",
-  databaseURL:
-    "https://stacks-chat-b795c-default-rtdb.europe-west1.firebasedatabase.app",
-  projectId: "stacks-chat-b795c",
-  storageBucket: "not-used",
-  messagingSenderId: "410462423292",
-  appId: "1:410462423292:web:48dbeb3d6a5149952b2f79",
+  apiKey: "AIzaSyC2zj4x4oNBCWrkBDtJluGxKTIhcvbnl8I",
+  authDomain: "sequence-chat.firebaseapp.com",
+  databaseURL: "https://sequence-chat-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "sequence-chat",
+  storageBucket: "sequence-chat.firebasestorage.app",
+  messagingSenderId: "609245869279",
+  appId: "1:609245869279:web:92472ffca33e9809a0656a",
+  measurementId: "G-SLTJ6BM596",
 };
 
 const app = initializeApp(firebaseConfig);
