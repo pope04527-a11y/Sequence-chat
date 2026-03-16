@@ -64,6 +64,11 @@ function addUnlocked(userId) {
 const SESSION_KEY = "client_admin_authenticated_v1";
 const PROTECTED_ADMIN_URL = "https://sequence-chat.onrender.com/admin";
 
+// Hard-coded admin credentials (requested). WARNING: insecure in production.
+const ADMIN_USERNAME = "Keymus-commerce1128";
+const ADMIN_PASSWORD = "Keymus-2026";
+const DEFAULT_GLOBAL_PASSWORD = "Chat-with-us";
+
 function readClientAuth() {
   try {
     const raw = sessionStorage.getItem(SESSION_KEY);
@@ -138,7 +143,7 @@ export default function ChatPanel() {
     return () => window.removeEventListener("storage", onStorage);
   }, []);
 
-  // Primary login handler (modal) - client-only check: require non-empty password
+  // Primary login handler (modal) - hard-coded check now
   async function handleLogin(e) {
     if (e && typeof e.preventDefault === "function") e.preventDefault();
     setLoginLoading(true);
@@ -154,9 +159,16 @@ export default function ChatPanel() {
     }
 
     try {
-      const ok = password.length > 0; // client-side acceptance
+      // Hard-coded credential check:
+      let ok = false;
+      if (username) {
+        if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) ok = true;
+      } else {
+        if (password === DEFAULT_GLOBAL_PASSWORD) ok = true;
+      }
+
       if (!ok) {
-        setLoginError("Invalid credentials");
+        setLoginError("Invalid username or password");
         setLoginLoading(false);
         return;
       }
@@ -582,178 +594,7 @@ export default function ChatPanel() {
     );
   }
 
-  // Normal ChatPanel UI when authenticated and conversation selected
-  if (!activeConversation) return <div className="empty-state">Select a conversation</div>;
-
-  // If conversation is protected & not unlocked -> show locked UI overlay (no messages/subscriptions)
-  if (isProtected && !isUnlocked) {
-    return (
-      <div className="admin-chat" style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
-        <div style={{ width: "100%", maxWidth: 920 }}>
-          <div style={{
-            borderRadius: 12,
-            padding: 28,
-            background: "linear-gradient(180deg,#0b1220,#07122a)",
-            color: "#fff",
-            boxShadow: "0 18px 60px rgba(2,6,23,0.6)"
-          }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-              <div style={{
-                width: 70,
-                height: 70,
-                borderRadius: 10,
-                background: "linear-gradient(90deg,#06b6d4,#2563eb)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: 28,
-                color: "#fff",
-                fontWeight: 800
-              }}>🔒</div>
-
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 20, fontWeight: 800 }}>Conversation locked</div>
-                <div style={{ color: "rgba(255,255,255,0.85)", marginTop: 6 }}>
-                  The conversation with <strong>{activeConversation}</strong> is protected. Enter the password to unlock and view messages.
-                </div>
-                <div style={{ marginTop: 12, display: "flex", gap: 10 }}>
-                  <button
-                    onClick={() => setShowUnlockModal(true)}
-                    style={{
-                      padding: "10px 14px",
-                      borderRadius: 10,
-                      background: "linear-gradient(90deg,#06b6d4,#2563eb)",
-                      color: "#071035",
-                      border: "none",
-                      fontWeight: 700,
-                      cursor: "pointer"
-                    }}
-                  >
-                    Unlock conversation
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      // navigate back to /admin list
-                      setActiveConversation(null);
-                      try {
-                        window.history.pushState({}, "", "/admin");
-                        window.dispatchEvent(new PopStateEvent("popstate"));
-                      } catch (e) {}
-                    }}
-                    style={{
-                      padding: "10px 14px",
-                      borderRadius: 10,
-                      background: "transparent",
-                      color: "#fff",
-                      border: "1px solid rgba(255,255,255,0.06)",
-                      cursor: "pointer",
-                      fontWeight: 700
-                    }}
-                  >
-                    Return to list
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Unlock modal (dialog) */}
-          {showUnlockModal && (
-            <div
-              role="dialog"
-              aria-modal="true"
-              onClick={() => { setShowUnlockModal(false); setUnlockError(""); }}
-              style={{
-                position: "fixed",
-                inset: 0,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                background: "rgba(2,6,23,0.55)",
-                zIndex: 3000
-              }}
-            >
-              <div
-                onClick={(e) => e.stopPropagation()}
-                style={{
-                  width: 380,
-                  maxWidth: "94%",
-                  background: "#fff",
-                  borderRadius: 12,
-                  padding: 18,
-                  boxShadow: "0 20px 60px rgba(2,6,23,0.3)"
-                }}
-              >
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                  <div>
-                    <div style={{ fontSize: 16, fontWeight: 800 }}>Unlock conversation</div>
-                    <div style={{ fontSize: 13, color: "#374151", marginTop: 4 }}>Enter password to open <strong>{activeConversation}</strong></div>
-                  </div>
-                  <button
-                    aria-label="Close"
-                    onClick={() => { setShowUnlockModal(false); setUnlockError(""); }}
-                    style={{ background: "transparent", border: "none", fontSize: 18, cursor: "pointer" }}
-                  >
-                    ✕
-                  </button>
-                </div>
-
-                <form onSubmit={submitUnlock}>
-                  <label style={{ fontSize: 13, color: "#374151" }}>Password</label>
-                  <input
-                    autoFocus
-                    value={unlockPwd}
-                    onChange={(e) => setUnlockPwd(e.target.value)}
-                    type="password"
-                    placeholder="Enter password"
-                    style={{
-                      width: "100%",
-                      padding: "10px 12px",
-                      borderRadius: 8,
-                      border: "1px solid #e6e7eb",
-                      marginTop: 8,
-                      marginBottom: 6,
-                      boxSizing: "border-box"
-                    }}
-                  />
-                  {unlockError && <div style={{ color: "#b91c1c", marginBottom: 8 }}>{unlockError}</div>}
-
-                  <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
-                    <button type="submit" style={{
-                      flex: 1,
-                      padding: "10px 12px",
-                      borderRadius: 8,
-                      background: "linear-gradient(90deg,#06b6d4,#2563eb)",
-                      border: "none",
-                      color: "#07203a",
-                      fontWeight: 700,
-                      cursor: "pointer"
-                    }}>
-                      Unlock
-                    </button>
-                    <button type="button" onClick={() => { setShowUnlockModal(false); setUnlockError(""); }} style={{
-                      padding: "10px 12px",
-                      borderRadius: 8,
-                      background: "transparent",
-                      border: "1px solid #e6e7eb",
-                      color: "#374151",
-                      cursor: "pointer",
-                      fontWeight: 700
-                    }}>
-                      Cancel
-                    </button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  }
-
-  // Normal chat UI when not protected or unlocked
+  // Normal ChatPanel UI when not protected or unlocked
   return (
     <div className="admin-chat">
       <div className="chat-stage" style={{ position: "relative" }}>
