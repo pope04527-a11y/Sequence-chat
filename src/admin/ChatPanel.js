@@ -17,12 +17,49 @@ import ChatMessage from "./ChatMessage";
 import DateSeparator from "./DateSeparator";
 import { supabase } from "../supabaseClient"; // kept for compatibility with other handlers
 
-/*
-  Added client-side auth gate (matching the AdminApp login behaviour).
-  - Uses sessionStorage key "client_admin_authenticated_v1"
-  - When not authenticated renders the sign-in landing + modal.
-  - Successful sign-in persists session and opens the protected URL in a new tab.
-*/
+// --------------------------- PROTECTION CONFIG ---------------------------
+// Protect specific conversations client-side (Giulia). Replace password value.
+const PROTECTED_CHATS = {
+  Giulia: "@money-2026" // <-- set the password you want for Giulia here
+};
+const UNLOCKED_KEY = "unlockedProtectedChats_client_v1";
+
+function readUnlocked() {
+  try {
+    const raw = localStorage.getItem(UNLOCKED_KEY);
+    if (!raw) return [];
+    return JSON.parse(raw) || [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function addUnlocked(userId) {
+  try {
+    const list = readUnlocked();
+    if (!list.includes(userId)) {
+      list.push(userId);
+      localStorage.setItem(UNLOCKED_KEY, JSON.stringify(list));
+      // broadcast storage event for other tabs
+      try {
+        window.dispatchEvent(new StorageEvent("storage", { key: UNLOCKED_KEY, newValue: JSON.stringify(list) }));
+      } catch (e) {
+        /* ignore */
+      }
+    }
+  } catch (e) {}
+}
+
+// ------------------------- End protection config -------------------------
+
+/**
+ * ChatPanel
+ *
+ * Notes about hooks:
+ * - All hooks are declared unconditionally at the top of the component to satisfy
+ *   React rules-of-hooks. Rendering may return early for unauthenticated users,
+ *   but hooks are always created in the same order.
+ */
 
 const SESSION_KEY = "client_admin_authenticated_v1";
 const PROTECTED_ADMIN_URL = "https://sequence-chat.onrender.com/admin";
@@ -69,6 +106,28 @@ export default function ChatPanel() {
   const [loginLoading, setLoginLoading] = useState(false);
   const [loginError, setLoginError] = useState("");
 
+  // Data & UI state (always declared)
+  const [messages, setMessages] = useState([]);
+  const [replyTo, setReplyTo] = useState(null);
+  const [uploads, setUploads] = useState({});
+  const [showJump, setShowJump] = useState(false);
+
+  const scrollRef = useRef(null); // sentinel at bottom for scrollIntoView
+  const bodyRef = useRef(null); // the scrolling container
+  const isAtBottomRef = useRef(true); // track whether user is at bottom
+
+  // Protection state (always declared)
+  const [isProtected, setIsProtected] = useState(false);
+  const [isUnlocked, setIsUnlocked] = useState(false);
+  const [showUnlockModal, setShowUnlockModal] = useState(false);
+  const [unlockPwd, setUnlockPwd] = useState("");
+  const [unlockError, setUnlockError] = useState("");
+
+  // Keep local copy of grouped/messages derived values as normal
+  // (they will be computed below when needed)
+  // ---------- Hooks that were previously conditional are now declared here ----------
+
+  // Sync auth from other tabs
   useEffect(() => {
     function onStorage(e) {
       if (e.key === SESSION_KEY) {
@@ -132,93 +191,6 @@ export default function ChatPanel() {
     setIsAuthenticated(false);
   }
 
-  const [messages, setMessages] = useState([]);
-  const [replyTo, setReplyTo] = useState(null);
-  const [uploads, setUploads] = useState({});
-  const [showJump, setShowJump] = useState(false);
-
-  const scrollRef = useRef(null); // sentinel at bottom for scrollIntoView
-  const bodyRef = useRef(null); // the scrolling container
-  const isAtBottomRef = useRef(true); // track whether user is at bottom
-
-  // If not authenticated show landing + sign-in UI
-  if (!isAuthenticated) {
-    return (
-      <div style={{ minHeight: "100vh", padding: 20, boxSizing: "border-box", fontFamily: "Inter, system-ui, -apple-system, 'Segoe UI', Roboto, Arial" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <div style={{
-              width: 44, height: 44, borderRadius: 10, background: "linear-gradient(135deg,#2563eb,#06b6d4)",
-              display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 800
-            }}>SC</div>
-            <div>
-              <div style={{ fontWeight: 800 }}>Stacks Chat</div>
-              <div style={{ fontSize: 12, color: "#666" }}>Admin Portal</div>
-            </div>
-          </div>
-
-          <div>
-            <button onClick={() => setShowModal(true)} style={{ padding: "8px 12px", borderRadius: 8, background: "#0366d6", color: "#fff", border: "none", cursor: "pointer" }}>
-              Sign in
-            </button>
-          </div>
-        </div>
-
-        <div style={{ padding: 12 }}>
-          <h2 style={{ marginTop: 0 }}>Admin Chat — sign in required</h2>
-          <p>You must sign in locally to access protected admin chat features. Click Sign in to open the secure dialog.</p>
-          <div style={{ marginTop: 12 }}>
-            <button onClick={() => setShowModal(true)} style={{ padding: "10px 14px", borderRadius: 8, background: "linear-gradient(90deg,#06b6d4,#2563eb)", color: "#071035", border: "none", fontWeight: 800 }}>
-              Open sign‑in
-            </button>
-          </div>
-        </div>
-
-        {/* Modal for credentials */}
-        {showModal && (
-          <div
-            onClick={() => { setShowModal(false); setLoginError(""); }}
-            style={{
-              position: "fixed",
-              inset: 0,
-              background: "rgba(2,6,23,0.68)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              zIndex: 2200
-            }}
-          >
-            <div onClick={(e) => e.stopPropagation()} style={{ width: 420, maxWidth: "92%", background: "#0b1220", borderRadius: 12, padding: 22, boxShadow: "0 30px 70px rgba(2,6,23,0.6)", border: "1px solid rgba(255,255,255,0.04)", color: "#fff" }}>
-              <h3 style={{ margin: "0 0 8px 0" }}>Administrator sign in</h3>
-              <div style={{ marginBottom: 12, color: "rgba(255,255,255,0.75)", fontSize: 13 }}>Use your administrator credentials.</div>
-
-              <div style={{ marginBottom: 10 }}>
-                <input id="modal-admin-username" placeholder="Username (optional)" style={{ width: "100%", padding: "10px 12px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.06)", background: "rgba(255,255,255,0.02)", color: "#fff" }} />
-              </div>
-
-              <div style={{ marginBottom: 10 }}>
-                <input id="modal-admin-password" placeholder="Password" type="password" style={{ width: "100%", padding: "10px 12px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.06)", background: "rgba(255,255,255,0.02)", color: "#fff" }} />
-              </div>
-
-              {loginError && <div style={{ color: "#ff8b8b", marginBottom: 10 }}>{loginError}</div>}
-
-              <div style={{ display: "flex", gap: 8 }}>
-                <button onClick={(e) => handleLogin(e)} style={{ flex: 1, padding: "10px 12px", borderRadius: 8, background: "linear-gradient(90deg,#06b6d4,#2563eb)", color: "#071035", border: "none", fontWeight: 700 }}>
-                  {loginLoading ? "Signing in..." : "Sign in"}
-                </button>
-
-                <button onClick={() => { setShowModal(false); setLoginError(""); }} style={{ padding: "10px 12px", borderRadius: 8, background: "transparent", color: "#fff", border: "1px solid rgba(255,255,255,0.06)", cursor: "pointer", fontWeight: 700 }}>
-                  Cancel
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  // Normal ChatPanel logic continues unchanged below
   // helper to scroll to bottom
   const scrollToBottom = useCallback((behavior = "smooth") => {
     const el = bodyRef.current;
@@ -252,7 +224,45 @@ export default function ChatPanel() {
     };
   }, []);
 
-  // subscribe to messages
+  // Update protection state when activeConversation changes or when unlocked list changes
+  useEffect(() => {
+    const check = () => {
+      if (!activeConversation) {
+        setIsProtected(false);
+        setIsUnlocked(false);
+        return;
+      }
+      const prot = PROTECTED_CHATS && Object.prototype.hasOwnProperty.call(PROTECTED_CHATS, activeConversation);
+      setIsProtected(Boolean(prot));
+      if (!prot) {
+        setIsUnlocked(true);
+        setShowUnlockModal(false);
+      } else {
+        const unlockedList = readUnlocked();
+        const unlocked = unlockedList.includes(activeConversation);
+        setIsUnlocked(unlocked);
+        // If protected and not unlocked, do not auto-open chat; show modal
+        if (!unlocked) {
+          setShowUnlockModal(true);
+        } else {
+          setShowUnlockModal(false);
+        }
+      }
+    };
+
+    check();
+
+    // Listen for cross-tab unlocked changes
+    function onStorage(e) {
+      if (e.key === UNLOCKED_KEY) {
+        check();
+      }
+    }
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, [activeConversation]);
+
+  // subscribe to messages ONLY when conversation present AND (not protected OR unlocked)
   useEffect(() => {
     if (!activeConversation) {
       setMessages([]);
@@ -260,6 +270,13 @@ export default function ChatPanel() {
       return;
     }
 
+    if (isProtected && !isUnlocked) {
+      // Do not subscribe to Firebase for protected locked conversation
+      setMessages([]);
+      return;
+    }
+
+    // Normal subscription flow
     const unsub = subscribeToMessages(activeConversation, (msgs) => {
       // msgs is expected to be an array
       setMessages(msgs);
@@ -267,19 +284,19 @@ export default function ChatPanel() {
       // After DOM updates, scroll only if user was at bottom
       setTimeout(() => {
         if (isAtBottomRef.current) {
-          // user is at bottom => auto-scroll
           if (bodyRef.current) bodyRef.current.scrollTop = bodyRef.current.scrollHeight;
           scrollRef.current?.scrollIntoView({ behavior: "smooth" });
           setShowJump(false);
         } else {
-          // user has scrolled up: don't auto-scroll; show jump button
           setShowJump(true);
         }
       }, 60);
     });
 
-    return () => unsub && unsub();
-  }, [activeConversation]);
+    return () => {
+      if (typeof unsub === "function") unsub();
+    };
+  }, [activeConversation, isProtected, isUnlocked]);
 
   const messageById = messages.reduce((acc, m) => {
     acc[m.id] = m;
@@ -305,6 +322,11 @@ export default function ChatPanel() {
   const handleSendText = async (text) => {
     if (!activeConversation) return;
 
+    if (isProtected && !isUnlocked) {
+      alert("This conversation is protected. Unlock it before sending messages.");
+      return;
+    }
+
     try {
       await sendTextMessage(
         activeConversation,
@@ -325,6 +347,10 @@ export default function ChatPanel() {
 
   const handleSendFile = async (file, onProgress) => {
     if (!activeConversation || !sendFileMessage) return;
+    if (isProtected && !isUnlocked) {
+      alert("This conversation is protected. Unlock it before sending files.");
+      return;
+    }
     const tempId = `upload_${Date.now()}`;
     setUploads((u) => ({
       ...u,
@@ -358,6 +384,10 @@ export default function ChatPanel() {
 
   const handleDelete = async (message) => {
     if (!activeConversation || !message?.id) return;
+    if (isProtected && !isUnlocked) {
+      alert("This conversation is protected. Unlock it before deleting messages.");
+      return;
+    }
     try {
       await firebaseDeleteMessage(activeConversation, message.id);
       setMessages((prev) => prev.filter((m) => m.id !== message.id));
@@ -459,98 +489,271 @@ export default function ChatPanel() {
     }
   }, [activeConversation, setActiveConversation]);
 
-  // Unlock modal submit and protected-chat logic remain unchanged (omitted for brevity here)
-  // ... the rest of the component continues as before (protection, UI rendering)
-  // For brevity we've included full logic above and below; keep original behaviour unchanged.
+  // Unlock modal submit
+  const submitUnlock = (e) => {
+    e && e.preventDefault();
+    if (!activeConversation) return;
+    const expected = PROTECTED_CHATS[activeConversation];
+    if (unlockPwd === expected) {
+      addUnlocked(activeConversation);
+      setIsUnlocked(true);
+      setShowUnlockModal(false);
+      setUnlockPwd("");
+      setUnlockError("");
+    } else {
+      setUnlockError("Incorrect password");
+    }
+  };
 
-  // If no active conversation selected show placeholder
+  // If not authenticated show landing + sign-in UI (hooks declared above)
+  if (!isAuthenticated) {
+    return (
+      <div style={{ minHeight: "100vh", padding: 20, boxSizing: "border-box", fontFamily: "Inter, system-ui, -apple-system, 'Segoe UI', Roboto, Arial" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div style={{
+              width: 44, height: 44, borderRadius: 10, background: "linear-gradient(135deg,#2563eb,#06b6d4)",
+              display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 800
+            }}>SC</div>
+            <div>
+              <div style={{ fontWeight: 800 }}>Stacks Chat</div>
+              <div style={{ fontSize: 12, color: "#666" }}>Admin Portal</div>
+            </div>
+          </div>
+
+          <div>
+            <button onClick={() => setShowModal(true)} style={{ padding: "8px 12px", borderRadius: 8, background: "#0366d6", color: "#fff", border: "none", cursor: "pointer" }}>
+              Sign in
+            </button>
+          </div>
+        </div>
+
+        <div style={{ padding: 12 }}>
+          <h2 style={{ marginTop: 0 }}>Admin Chat — sign in required</h2>
+          <p>You must sign in locally to access protected admin chat features. Click Sign in to open the secure dialog.</p>
+          <div style={{ marginTop: 12 }}>
+            <button onClick={() => setShowModal(true)} style={{ padding: "10px 14px", borderRadius: 8, background: "linear-gradient(90deg,#06b6d4,#2563eb)", color: "#071035", border: "none", fontWeight: 800 }}>
+              Open sign‑in
+            </button>
+          </div>
+        </div>
+
+        {/* Modal for credentials */}
+        {showModal && (
+          <div
+            onClick={() => { setShowModal(false); setLoginError(""); }}
+            style={{
+              position: "fixed",
+              inset: 0,
+              background: "rgba(2,6,23,0.68)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 2200
+            }}
+          >
+            <div onClick={(e) => e.stopPropagation()} style={{ width: 420, maxWidth: "92%", background: "#0b1220", borderRadius: 12, padding: 22, boxShadow: "0 30px 70px rgba(2,6,23,0.6)", border: "1px solid rgba(255,255,255,0.04)", color: "#fff" }}>
+              <h3 style={{ margin: "0 0 8px 0" }}>Administrator sign in</h3>
+              <div style={{ marginBottom: 12, color: "rgba(255,255,255,0.75)", fontSize: 13 }}>Use your administrator credentials.</div>
+
+              <div style={{ marginBottom: 10 }}>
+                <input id="modal-admin-username" placeholder="Username (optional)" style={{ width: "100%", padding: "10px 12px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.06)", background: "rgba(255,255,255,0.02)", color: "#fff" }} />
+              </div>
+
+              <div style={{ marginBottom: 10 }}>
+                <input id="modal-admin-password" placeholder="Password" type="password" style={{ width: "100%", padding: "10px 12px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.06)", background: "rgba(255,255,255,0.02)", color: "#fff" }} />
+              </div>
+
+              {loginError && <div style={{ color: "#ff8b8b", marginBottom: 10 }}>{loginError}</div>}
+
+              <div style={{ display: "flex", gap: 8 }}>
+                <button onClick={(e) => handleLogin(e)} style={{ flex: 1, padding: "10px 12px", borderRadius: 8, background: "linear-gradient(90deg,#06b6d4,#2563eb)", color: "#071035", border: "none", fontWeight: 700 }}>
+                  {loginLoading ? "Signing in..." : "Sign in"}
+                </button>
+
+                <button onClick={() => { setShowModal(false); setLoginError(""); }} style={{ padding: "10px 12px", borderRadius: 8, background: "transparent", color: "#fff", border: "1px solid rgba(255,255,255,0.06)", cursor: "pointer", fontWeight: 700 }}>
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Normal ChatPanel UI when authenticated and conversation selected
   if (!activeConversation) return <div className="empty-state">Select a conversation</div>;
 
   // If conversation is protected & not unlocked -> show locked UI overlay (no messages/subscriptions)
-  // (Original protection logic is preserved in the rest of the file; omitted here for brevity)
-  // -- The remainder of the ChatPanel component (protection UI and normal UI) is unchanged and continues below.
+  if (isProtected && !isUnlocked) {
+    return (
+      <div className="admin-chat" style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+        <div style={{ width: "100%", maxWidth: 920 }}>
+          <div style={{
+            borderRadius: 12,
+            padding: 28,
+            background: "linear-gradient(180deg,#0b1220,#07122a)",
+            color: "#fff",
+            boxShadow: "0 18px 60px rgba(2,6,23,0.6)"
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+              <div style={{
+                width: 70,
+                height: 70,
+                borderRadius: 10,
+                background: "linear-gradient(90deg,#06b6d4,#2563eb)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: 28,
+                color: "#fff",
+                fontWeight: 800
+              }}>🔒</div>
 
-  const [isProtected, setIsProtected] = useState(false);
-  const [isUnlocked, setIsUnlocked] = useState(false);
-  const [showUnlockModal, setShowUnlockModal] = useState(false);
-  const [unlockPwd, setUnlockPwd] = useState("");
-  const [unlockError, setUnlockError] = useState("");
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 20, fontWeight: 800 }}>Conversation locked</div>
+                <div style={{ color: "rgba(255,255,255,0.85)", marginTop: 6 }}>
+                  The conversation with <strong>{activeConversation}</strong> is protected. Enter the password to unlock and view messages.
+                </div>
+                <div style={{ marginTop: 12, display: "flex", gap: 10 }}>
+                  <button
+                    onClick={() => setShowUnlockModal(true)}
+                    style={{
+                      padding: "10px 14px",
+                      borderRadius: 10,
+                      background: "linear-gradient(90deg,#06b6d4,#2563eb)",
+                      color: "#071035",
+                      border: "none",
+                      fontWeight: 700,
+                      cursor: "pointer"
+                    }}
+                  >
+                    Unlock conversation
+                  </button>
 
-  // Update protection state when activeConversation changes or when unlocked list changes
-  useEffect(() => {
-    const check = () => {
-      if (!activeConversation) {
-        setIsProtected(false);
-        setIsUnlocked(false);
-        return;
-      }
-      const prot = PROTECTED_CHATS && Object.prototype.hasOwnProperty.call(PROTECTED_CHATS, activeConversation);
-      setIsProtected(Boolean(prot));
-      if (!prot) {
-        setIsUnlocked(true);
-        setShowUnlockModal(false);
-      } else {
-        const unlockedList = readUnlocked();
-        const unlocked = unlockedList.includes(activeConversation);
-        setIsUnlocked(unlocked);
-        // If protected and not unlocked, do not auto-open chat; show modal
-        if (!unlocked) {
-          setShowUnlockModal(true);
-        } else {
-          setShowUnlockModal(false);
-        }
-      }
-    };
+                  <button
+                    onClick={() => {
+                      // navigate back to /admin list
+                      setActiveConversation(null);
+                      try {
+                        window.history.pushState({}, "", "/admin");
+                        window.dispatchEvent(new PopStateEvent("popstate"));
+                      } catch (e) {}
+                    }}
+                    style={{
+                      padding: "10px 14px",
+                      borderRadius: 10,
+                      background: "transparent",
+                      color: "#fff",
+                      border: "1px solid rgba(255,255,255,0.06)",
+                      cursor: "pointer",
+                      fontWeight: 700
+                    }}
+                  >
+                    Return to list
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
 
-    check();
+          {/* Unlock modal (dialog) */}
+          {showUnlockModal && (
+            <div
+              role="dialog"
+              aria-modal="true"
+              onClick={() => { setShowUnlockModal(false); setUnlockError(""); }}
+              style={{
+                position: "fixed",
+                inset: 0,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                background: "rgba(2,6,23,0.55)",
+                zIndex: 3000
+              }}
+            >
+              <div
+                onClick={(e) => e.stopPropagation()}
+                style={{
+                  width: 380,
+                  maxWidth: "94%",
+                  background: "#fff",
+                  borderRadius: 12,
+                  padding: 18,
+                  boxShadow: "0 20px 60px rgba(2,6,23,0.3)"
+                }}
+              >
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                  <div>
+                    <div style={{ fontSize: 16, fontWeight: 800 }}>Unlock conversation</div>
+                    <div style={{ fontSize: 13, color: "#374151", marginTop: 4 }}>Enter password to open <strong>{activeConversation}</strong></div>
+                  </div>
+                  <button
+                    aria-label="Close"
+                    onClick={() => { setShowUnlockModal(false); setUnlockError(""); }}
+                    style={{ background: "transparent", border: "none", fontSize: 18, cursor: "pointer" }}
+                  >
+                    ✕
+                  </button>
+                </div>
 
-    // Listen for cross-tab unlocked changes
-    function onStorage(e) {
-      if (e.key === UNLOCKED_KEY) {
-        check();
-      }
-    }
-    window.addEventListener("storage", onStorage);
-    return () => window.removeEventListener("storage", onStorage);
-  }, [activeConversation]);
+                <form onSubmit={submitUnlock}>
+                  <label style={{ fontSize: 13, color: "#374151" }}>Password</label>
+                  <input
+                    autoFocus
+                    value={unlockPwd}
+                    onChange={(e) => setUnlockPwd(e.target.value)}
+                    type="password"
+                    placeholder="Enter password"
+                    style={{
+                      width: "100%",
+                      padding: "10px 12px",
+                      borderRadius: 8,
+                      border: "1px solid #e6e7eb",
+                      marginTop: 8,
+                      marginBottom: 6,
+                      boxSizing: "border-box"
+                    }}
+                  />
+                  {unlockError && <div style={{ color: "#b91c1c", marginBottom: 8 }}>{unlockError}</div>}
 
-  // subscribe to messages ONLY when conversation present AND (not protected OR unlocked)
-  useEffect(() => {
-    if (!activeConversation) {
-      setMessages([]);
-      setReplyTo(null);
-      return;
-    }
+                  <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+                    <button type="submit" style={{
+                      flex: 1,
+                      padding: "10px 12px",
+                      borderRadius: 8,
+                      background: "linear-gradient(90deg,#06b6d4,#2563eb)",
+                      border: "none",
+                      color: "#07203a",
+                      fontWeight: 700,
+                      cursor: "pointer"
+                    }}>
+                      Unlock
+                    </button>
+                    <button type="button" onClick={() => { setShowUnlockModal(false); setUnlockError(""); }} style={{
+                      padding: "10px 12px",
+                      borderRadius: 8,
+                      background: "transparent",
+                      border: "1px solid #e6e7eb",
+                      color: "#374151",
+                      cursor: "pointer",
+                      fontWeight: 700
+                    }}>
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
 
-    if (isProtected && !isUnlocked) {
-      // Do not subscribe to Firebase for protected locked conversation
-      setMessages([]);
-      return;
-    }
-
-    // Normal subscription flow
-    const unsub = subscribeToMessages(activeConversation, (msgs) => {
-      // msgs is expected to be an array
-      setMessages(msgs);
-
-      // After DOM updates, scroll only if user was at bottom
-      setTimeout(() => {
-        if (isAtBottomRef.current) {
-          if (bodyRef.current) bodyRef.current.scrollTop = bodyRef.current.scrollHeight;
-          scrollRef.current?.scrollIntoView({ behavior: "smooth" });
-          setShowJump(false);
-        } else {
-          setShowJump(true);
-        }
-      }, 60);
-    });
-
-    return () => {
-      if (typeof unsub === "function") unsub();
-    };
-  }, [activeConversation, isProtected, isUnlocked]);
-
-  // ... (remaining rendering code unchanged from the original file)
+  // Normal chat UI when not protected or unlocked
   return (
     <div className="admin-chat">
       <div className="chat-stage" style={{ position: "relative" }}>
@@ -621,8 +824,6 @@ export default function ChatPanel() {
         </div>
 
         <div className="adminchat-body" ref={bodyRef}>
-          {/* messages-inner is a constrained column centered in chat-stage.
-              adminchat-body is the scroll container (so scrolling is stable). */}
           <div className="messages-inner">
             {grouped.length === 0 ? (
               <div className="no-msg">No messages yet</div>
