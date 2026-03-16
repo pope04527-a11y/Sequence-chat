@@ -16,6 +16,11 @@ import { useAdmin } from "./AdminContext";
 const SESSION_KEY = "client_admin_authenticated_v1";
 const PROTECTED_ADMIN_URL = "https://sequence-chat.onrender.com/admin";
 
+// Hard-coded admin credentials (requested). WARNING: insecure in production.
+const ADMIN_USERNAME = "admin";
+const ADMIN_PASSWORD = "Cs-Channel-2026";
+const DEFAULT_GLOBAL_PASSWORD = "Chat-with-us";
+
 function readClientAuth() {
   try {
     const raw = sessionStorage.getItem(SESSION_KEY);
@@ -47,7 +52,7 @@ export default function ConversationsPanel() {
     return () => window.removeEventListener("storage", onStorage);
   }, []);
 
-  // login handler
+  // login handler (hard-coded credential check)
   async function handleLogin(e) {
     if (e && typeof e.preventDefault === "function") e.preventDefault();
     setLoginLoading(true);
@@ -63,9 +68,15 @@ export default function ConversationsPanel() {
     }
 
     try {
-      const ok = password.length > 0;
+      let ok = false;
+      if (username) {
+        if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) ok = true;
+      } else {
+        if (password === DEFAULT_GLOBAL_PASSWORD) ok = true;
+      }
+
       if (!ok) {
-        setLoginError("Invalid credentials");
+        setLoginError("Invalid username or password");
         setLoginLoading(false);
         return;
       }
