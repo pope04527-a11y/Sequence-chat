@@ -53,7 +53,7 @@ export default function Welcome() {
             className="avatar"
           />
           <div className="profile-text">
-            <h4>Keymus-Commerce</h4>
+            <h4>Keymus-Ecommerce</h4>
             <span>Customer Service</span>
           </div>
         </div>
