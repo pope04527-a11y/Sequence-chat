@@ -7,11 +7,11 @@ import "./Admin.css";
 import { db } from "../firebase";
 
 /*
-  Added a small client-side admin gate (matching the auth/login behaviour from the files you shared).
-  - Uses the same sessionStorage key that existing AdminApp uses: "client_admin_authenticated_v1"
+  Added a small client-side admin gate (matching the auth/login behaviour you requested).
+  - Uses the same sessionStorage key: "client_admin_authenticated_v1"
   - When not authenticated, a landing view + Sign in button is shown and a modal prompts for credentials.
   - Successful sign-in stores the session key and reveals the admin UI (client-side only).
-  - After successful sign-in the protected external admin URL is opened in a new tab (the URL you provided).
+  - After successful sign-in the protected external admin URL is opened in a new tab.
 */
 
 const SESSION_KEY = "client_admin_authenticated_v1";
