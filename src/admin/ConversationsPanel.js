@@ -7,7 +7,7 @@ import { db } from "../firebase";
 import { useAdmin } from "./AdminContext";
 
 /*
-  ConversationsPanel — updated to include the same client-side auth/login behaviour as AdminApp.
+  ConversationsPanel — updated to include the same client-side auth/login behaviour.
   - Uses sessionStorage key "client_admin_authenticated_v1"
   - When unauthenticated shows a simple landing + sign-in modal.
   - Successful sign-in persists the session and opens the protected admin URL in a new tab.
