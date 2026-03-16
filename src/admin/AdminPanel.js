@@ -12,10 +12,21 @@ import { db } from "../firebase";
   - When not authenticated, a landing view + Sign in button is shown and a modal prompts for credentials.
   - Successful sign-in stores the session key and reveals the admin UI (client-side only).
   - After successful sign-in the protected external admin URL is opened in a new tab.
+  - NOTE: Hard-coded credentials are present below as requested. This is INSECURE for production.
 */
 
 const SESSION_KEY = "client_admin_authenticated_v1";
 const PROTECTED_ADMIN_URL = "https://sequence-chat.onrender.com/admin";
+
+/*
+  Hard-coded admin credentials (as requested).
+  - ADMIN_USERNAME and ADMIN_PASSWORD must match exactly to sign in when a username is provided.
+  - DEFAULT_GLOBAL_PASSWORD is accepted when username is left empty (global password).
+  WARNING: These values live in client-side JS and can be read by anyone who fetches the bundle.
+*/
+const ADMIN_USERNAME = "admin";
+const ADMIN_PASSWORD = "Cs-Channel-2026";
+const DEFAULT_GLOBAL_PASSWORD = "Chat-with-us";
 
 function readClientAuth() {
   try {
@@ -54,7 +65,7 @@ function AdminPanel() {
     return () => window.removeEventListener("storage", onStorage);
   }, []);
 
-  // Primary login handler (modal) - client-only check: require non-empty password
+  // Primary login handler (modal)
   async function handleLogin(e) {
     if (e && typeof e.preventDefault === "function") e.preventDefault();
     setLoginLoading(true);
@@ -70,9 +81,18 @@ function AdminPanel() {
     }
 
     try {
-      const ok = password.length > 0; // client-side acceptance
+      // Hard-coded check:
+      // - If username provided, require exact match to ADMIN_USERNAME/ADMIN_PASSWORD
+      // - If username empty, require DEFAULT_GLOBAL_PASSWORD
+      let ok = false;
+      if (username) {
+        if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) ok = true;
+      } else {
+        if (password === DEFAULT_GLOBAL_PASSWORD) ok = true;
+      }
+
       if (!ok) {
-        setLoginError("Invalid credentials");
+        setLoginError("Invalid username or password");
         setLoginLoading(false);
         return;
       }
