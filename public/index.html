@@ -6,33 +6,6 @@
     <meta name="theme-color" content="#000000" />
     <meta name="description" content="Web site created using create-react-app" />
 
-    <!-- Redirect onrender host -> custom domain to keep canonical URL -->
-    <script>
-      (function() {
-        try {
-          var preferred = "chat.keymusecommerce.com";
-          var current = location.hostname;
-          // Only redirect when we're on an onrender hostname and not already on the preferred host.
-          // Skip localhost/dev environments.
-          if (
-            current &&
-            current !== preferred &&
-            current.endsWith("onrender.com") &&
-            current !== "localhost"
-          ) {
-            var newUrl = location.protocol + "//" + preferred + location.pathname + location.search + location.hash;
-            if (location.href !== newUrl) {
-              // Replace so back button won't create a redirect loop
-              location.replace(newUrl);
-            }
-          }
-        } catch (e) {
-          // fail silently in case of any error
-          if (window && window.console && window.console.error) window.console.error(e);
-        }
-      })();
-    </script>
-
     <!-- Removes favicon completely -->
     <link rel="icon" href="data:,">
 
@@ -57,4 +30,11 @@
     <!--
       This HTML file is a template.
       If you open it directly in the browser, you will see an empty page.
-      You can add webfonts, meta
+      You can add webfonts, meta tags, or analytics to this file.
+      The build step will place the bundled scripts into the <body> tag.
+
+      To begin the development, run npm start or yarn start.
+      To create a production bundle, use npm run build or yarn build.
+    -->
+  </body>
+</html>
