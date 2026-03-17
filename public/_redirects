@@ -1,3 +1,6 @@
+# Redirect onrender host to custom domain
+https://sequence-chat.onrender.com/* https://chat.keymusecommerce.com/:splat 301!
+
 # React Router fallback – always keep this at the bottom
 /*    /index.html   200
 
